@@ -1,13 +1,8 @@
-description: somehow webview is missing files from chrome/browser in v88
-author: Wengling Chen <feiyu2817@gmail.com>
-
----
- android_webview/lib/BUILD.gn |    2 ++
- 1 file changed, 2 insertions(+)
+diff --git a/android_webview/lib/BUILD.gn b/android_webview/lib/BUILD.gn
 --- a/android_webview/lib/BUILD.gn
 +++ b/android_webview/lib/BUILD.gn
-@@ -21,6 +21,8 @@ source_set("lib") {
-     "//android_webview/gpu",
+@@ -24,6 +24,8 @@
+     "//android_webview/js_sandbox/service:js_sandbox",
      "//android_webview/renderer",
      "//base",
 +    "//chrome/browser:browser",

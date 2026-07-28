@@ -3,42 +3,33 @@ Date: Thu, 20 Feb 2020 22:24:35 -0500
 Subject: fix build error with prefs.h
 
 ---
- chrome/android/java/src/org/chromium/chrome/browser/signin/SyncConsentFragmentBase.java              |    3 +--
- chrome/browser/preferences/BUILD.gn                                                                  |    1 -
- chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/SigninPromoUtil.java |    3 +--
- 3 files changed, 2 insertions(+), 5 deletions(-)
- 
+ chrome/browser/preferences/BUILD.gn                                                                             |    1 -
+ chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/FullscreenSigninPromoLauncher.java |    3 +--
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/chrome/browser/preferences/BUILD.gn b/chrome/browser/preferences/BUILD.gn
+index 2eb743c..75c4171 100644
 --- a/chrome/browser/preferences/BUILD.gn
 +++ b/chrome/browser/preferences/BUILD.gn
-@@ -37,7 +37,6 @@ java_cpp_strings("java_pref_names_srcjar
-     "//components/offline_pages/core/prefetch/prefetch_prefs.cc",
-     "//components/password_manager/core/common/password_manager_pref_names.cc",
-     "//components/payments/core/payment_prefs.cc",
+@@ -75,7 +75,6 @@ java_cpp_strings("java_pref_names_srcjar") {
+     "//components/safe_browsing/core/common/safe_browsing_prefs.h",
+     "//components/safety_check/safety_check_pref_names.h",
+     "//components/saved_tab_groups/public/pref_names.h",
 -    "//components/signin/public/base/signin_pref_names.cc",
-     "//components/translate/core/browser/translate_pref_names.cc",
+     "//components/supervised_user/core/common/pref_names.h",
+     "//components/translate/core/browser/translate_pref_names.h",
    ]
- 
---- a/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/SigninPromoUtil.java
-+++ b/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/SigninPromoUtil.java
-@@ -78,8 +78,7 @@ public final class SigninPromoUtil {
+diff --git a/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/FullscreenSigninPromoLauncher.java b/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/FullscreenSigninPromoLauncher.java
+index 4d9f12b..89e5b0c 100644
+--- a/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/FullscreenSigninPromoLauncher.java
++++ b/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/FullscreenSigninPromoLauncher.java
+@@ -173,8 +173,7 @@ public final class FullscreenSigninPromoLauncher {
              return false;
          }
  
--        if (TextUtils.isEmpty(
--                    UserPrefs.get(profile).getString(Pref.GOOGLE_SERVICES_LAST_USERNAME))) {
+-        if (!TextUtils.isEmpty(
+-                UserPrefs.get(profile).getString(Pref.GOOGLE_SERVICES_LAST_SYNCING_USERNAME))) {
 +        if (true) {
              // Don't show if user has manually signed out.
              return false;
          }
---- a/chrome/android/java/src/org/chromium/chrome/browser/signin/SyncConsentFragmentBase.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/signin/SyncConsentFragmentBase.java
-@@ -468,8 +468,7 @@ public abstract class SyncConsentFragmen
-         mConfirmSyncDataStateMachine = new ConfirmSyncDataStateMachine(
-                 new ConfirmSyncDataStateMachineDelegate(
-                         requireContext(), getChildFragmentManager(), mModalDialogManager),
--                UserPrefs.get(Profile.getLastUsedRegularProfile())
--                        .getString(Pref.GOOGLE_SERVICES_LAST_USERNAME),
-+                "",
-                 mSelectedAccountName, new ConfirmSyncDataStateMachine.Listener() {
-                     @Override
-                     public void onConfirm(boolean wipeData) {

@@ -1,0 +1,1274 @@
+diff --git a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java
+--- a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java
++++ b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java
+@@ -9,8 +9,6 @@
+ import android.content.Intent;
+ import android.net.Uri;
+ 
+-import com.google.android.gms.common.GoogleApiAvailability;
+-
+ import org.chromium.build.annotations.NullMarked;
+ 
+ /** Launches the UI through which the user can update Google Play Services/ */
+@@ -25,31 +23,5 @@
+      * @param context to start the new store Activity from.
+      */
+     public static void launch(Context context) {
+-        Intent intent = new Intent(Intent.ACTION_VIEW);
+-        String deepLinkUrl =
+-                "market://details?id="
+-                        + GoogleApiAvailability.GOOGLE_PLAY_SERVICES_PACKAGE
+-                        + "&referrer="
+-                        + STORE_REFERER;
+-
+-        intent.setPackage("com.android.vending");
+-        intent.setData(Uri.parse(deepLinkUrl));
+-        intent.putExtra("callerId", context.getPackageName());
+-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+-
+-        // Request for overlay flow, Play Store will fallback to the default
+-        // behaviour if overlay is not available.
+-        // TODO(crbug.com/40855336): Use AlleyOop v3 overlay UI after fixing Chrome restart
+-        // during the GMS Core installation.
+-        // intent.putExtra("overlay", true);
+-        try {
+-            context.startActivity(intent);
+-        } catch (ActivityNotFoundException e) {
+-            // In case that Google Play Store isn't present on the device, its activity could not
+-            // have been started.
+-            // TODO: b/334051261 - Instead of silently failing to open Google Play Store to offer
+-            // updating GMS Core, either don't offer the option at all or indicate why the update
+-            // button didn't work.
+-        }
+     }
+ }
+diff --git a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerAndroidBackendUtil.java b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerAndroidBackendUtil.java
+--- a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerAndroidBackendUtil.java
++++ b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerAndroidBackendUtil.java
+@@ -5,10 +5,6 @@
+ 
+ import android.app.PendingIntent;
+ 
+-import com.google.android.gms.common.ConnectionResult;
+-import com.google.android.gms.common.api.ApiException;
+-import com.google.android.gms.common.api.ResolvableApiException;
+-
+ import org.chromium.base.Log;
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.Nullable;
+@@ -28,9 +24,6 @@
+         if (exception instanceof PasswordStoreAndroidBackend.BackendException) {
+             return ((PasswordStoreAndroidBackend.BackendException) exception).errorCode;
+         }
+-        if (exception instanceof ApiException) {
+-            return AndroidBackendErrorType.EXTERNAL_ERROR;
+-        }
+         return AndroidBackendErrorType.UNCATEGORIZED;
+     }
+ 
+@@ -38,41 +31,14 @@
+         if (exception instanceof PasswordCheckupClientHelper.PasswordManagerUnavailableException) {
+             return CredentialManagerError.PASSWORD_MANAGER_NOT_AVAILABLE;
+         }
+-        if (exception instanceof ApiException) {
+-            return CredentialManagerError.API_EXCEPTION;
+-        }
+         return CredentialManagerError.OTHER_API_ERROR;
+     }
+ 
+     static int getApiErrorCode(Exception exception) {
+-        if (exception instanceof ApiException) {
+-            return ((ApiException) exception).getStatusCode();
+-        }
+-        return 0; // '0' means SUCCESS.
++        return /* CommonStatusCodes.ERROR */ 13;
+     }
+ 
+     static @Nullable Integer getConnectionResultCode(Exception exception) {
+-        if (!(exception instanceof ApiException)) return null;
+-
+-        ConnectionResult connectionResult =
+-                ((ApiException) exception).getStatus().getConnectionResult();
+-        if (connectionResult == null) return null;
+-
+-        return connectionResult.getErrorCode();
+-    }
+-
+-    static void handleResolvableApiException(ResolvableApiException exception) {
+-        // No special resolution for the authentication errors is needed since the user has already
+-        // been prompted to reauthenticate by Google services and Sync in Chrome.
+-        if (exception.getStatusCode() == ChromeSyncStatusCode.AUTH_ERROR_RESOLVABLE) return;
+-
+-        // For all other resolvable errors, an intent is launched allowing the user to fix the
+-        // broken state.
+-        PendingIntent pendingIntent = exception.getResolution();
+-        try {
+-            pendingIntent.send();
+-        } catch (PendingIntent.CanceledException e) {
+-            Log.e(TAG, "Can not launch error resolution intent", e);
+-        }
++        return null;
+     }
+ }
+diff --git a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerHelper.java b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerHelper.java
+--- a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerHelper.java
++++ b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordManagerHelper.java
+@@ -16,8 +16,6 @@
+ import androidx.annotation.VisibleForTesting;
+ import androidx.fragment.app.FragmentActivity;
+ 
+-import com.google.android.gms.common.api.ApiException;
+-
+ import org.jni_zero.JniType;
+ import org.jni_zero.NativeMethods;
+ 
+@@ -491,13 +489,6 @@
+         // If the exception is not a Chrome-defined one, it means that the call failed at the
+         // API call level. It could have either failed with a known ApiException or because of a
+         // different error (e.g. a different exception thrown by the implementation of the API).
+-        if (!(exception instanceof ApiException)) {
+-            RecordHistogram.recordEnumeratedHistogram(
+-                    kGetIntentErrorHistogram,
+-                    CredentialManagerError.OTHER_API_ERROR,
+-                    CredentialManagerError.COUNT);
+-            return;
+-        }
+ 
+         RecordHistogram.recordEnumeratedHistogram(
+                 kGetIntentErrorHistogram,
+diff --git a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordSyncControllerDelegateBridgeImpl.java b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordSyncControllerDelegateBridgeImpl.java
+--- a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordSyncControllerDelegateBridgeImpl.java
++++ b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/PasswordSyncControllerDelegateBridgeImpl.java
+@@ -4,8 +4,6 @@
+ 
+ package org.chromium.chrome.browser.password_manager;
+ 
+-import com.google.android.gms.common.api.ApiException;
+-
+ import org.jni_zero.CalledByNative;
+ import org.jni_zero.NativeMethods;
+ 
+@@ -78,11 +76,6 @@
+             error = ((PasswordStoreAndroidBackend.BackendException) exception).errorCode;
+         }
+ 
+-        if (exception instanceof ApiException) {
+-            error = AndroidBackendErrorType.EXTERNAL_ERROR;
+-            apiErrorCode = ((ApiException) exception).getStatusCode();
+-        }
+-
+         PasswordSyncControllerDelegateBridgeImplJni.get()
+                 .onCredentialManagerError(mNativeDelegateBridgeImpl, error, apiErrorCode);
+     }
+diff --git a/chrome/browser/webauthn/android/java/src/org/chromium/chrome/browser/webauthn/CableAuthenticatorModuleProvider.java b/chrome/browser/webauthn/android/java/src/org/chromium/chrome/browser/webauthn/CableAuthenticatorModuleProvider.java
+--- a/chrome/browser/webauthn/android/java/src/org/chromium/chrome/browser/webauthn/CableAuthenticatorModuleProvider.java
++++ b/chrome/browser/webauthn/android/java/src/org/chromium/chrome/browser/webauthn/CableAuthenticatorModuleProvider.java
+@@ -9,8 +9,6 @@
+ import android.content.Context;
+ import android.os.Parcel;
+ 
+-import com.google.android.gms.tasks.Task;
+-
+ import org.jni_zero.CalledByNative;
+ import org.jni_zero.NativeMethods;
+ 
+@@ -23,7 +21,6 @@
+ import org.chromium.chrome.browser.enterprise.util.EnterpriseInfo;
+ import org.chromium.components.browser_ui.notifications.NotificationProxyUtils;
+ import org.chromium.components.externalauth.ExternalAuthUtils;
+-import org.chromium.components.webauthn.Fido2ApiCall;
+ 
+ /**
+  * Provides linking information to the native side.
+@@ -83,37 +80,7 @@
+             ok = false;
+         }
+ 
+-        if (!ok) {
+-            CableAuthenticatorModuleProviderJni.get().onHaveLinkingInformation(pointer, null);
+-            return;
+-        }
+-
+-        Fido2ApiCall call =
+-                new Fido2ApiCall(
+-                        ContextUtils.getApplicationContext(), Fido2ApiCall.FIRST_PARTY_API);
+-        Parcel args = call.start();
+-        Fido2ApiCall.ByteArrayResult result = new Fido2ApiCall.ByteArrayResult();
+-        args.writeStrongBinder(result);
+-        Task<byte[]> task =
+-                call.run(
+-                        Fido2ApiCall.METHOD_GET_LINK_INFO,
+-                        Fido2ApiCall.TRANSACTION_GET_LINK_INFO,
+-                        args,
+-                        result);
+-        task.addOnSuccessListener(
+-                        linkInfo -> {
+-                            CableAuthenticatorModuleProviderJni.get()
+-                                    .onHaveLinkingInformation(pointer, linkInfo);
+-                        })
+-                .addOnFailureListener(
+-                        exception -> {
+-                            Log.e(
+-                                    TAG,
+-                                    "Call to get linking information from Play Services failed",
+-                                    exception);
+-                            CableAuthenticatorModuleProviderJni.get()
+-                                    .onHaveLinkingInformation(pointer, null);
+-                        });
++        CableAuthenticatorModuleProviderJni.get().onHaveLinkingInformation(pointer, null);
+     }
+ 
+     @NativeMethods
+diff --git a/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsCreationDelegate.java b/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsCreationDelegate.java
+--- a/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsCreationDelegate.java
++++ b/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsCreationDelegate.java
+@@ -20,10 +20,6 @@
+ import androidx.credentials.exceptions.CreateCredentialUnknownException;
+ import androidx.credentials.provider.PendingIntentHandler;
+ 
+-import com.google.android.gms.identitycredentials.CreateCredentialRequest;
+-import com.google.android.gms.identitycredentials.IdentityCredentialClient;
+-import com.google.android.gms.identitycredentials.IdentityCredentialManager;
+-
+ import org.json.JSONException;
+ import org.json.JSONObject;
+ 
+@@ -53,173 +49,7 @@
+     @OptIn(markerClass = ExperimentalDigitalCredentialApi.class)
+     public Promise<DigitalCredential> create(
+             WindowAndroid windowAndroid, String origin, String request) {
+-        Activity window = windowAndroid.getActivity().get();
+-        if (window == null) return Promise.rejected();
+-
+-        final IdentityCredentialClient client;
+-        try {
+-            client = IdentityCredentialManager.Companion.getClient(window);
+-        } catch (Exception e) {
+-            // Thrown when running in phones without the most current GMS
+-            // version.
+-            return Promise.rejected();
+-        }
+-
+-        final Promise<DigitalCredential> result = new Promise<>();
+-
+-        ResultReceiver resultReceiver =
+-                new ResultReceiver(new Handler(Looper.getMainLooper())) {
+-                    @Override
+-                    protected void onReceiveResult(int code, Bundle data) {
+-                        if (!result.isPending()) {
+-                            // Promises don't support duplicate calls to fulfill/reject. If the
+-                            // promise has been fulfilled/rejected already (e.g. due to erroneous
+-                            // exception during the API call), return immediately.
+-                            return;
+-                        }
+-                        Log.d(TAG, "Received a response");
+-                        Intent providerData =
+-                                data == null
+-                                        ? null
+-                                        : IntentUtils.safeGetParcelable(
+-                                                data, BUNDLE_KEY_PROVIDER_DATA);
+-
+-                        if (code != Activity.RESULT_OK) {
+-                            androidx.credentials.exceptions.CreateCredentialException exception =
+-                                    providerData != null
+-                                            ? PendingIntentHandler
+-                                                    .retrieveCreateCredentialException(providerData)
+-                                            : null;
+-                            handleCreateCredentialException(code, exception, result);
+-                            return;
+-                        }
+-
+-                        if (providerData == null) {
+-                            Log.d(TAG, "Response doesn't contain providerData");
+-                            result.reject(
+-                                    new CreateCredentialUnknownException(
+-                                            "Response doesn't contain providerData"));
+-                            return;
+-                        }
+-
+-                        var response =
+-                                PendingIntentHandler.retrieveCreateCredentialResponse(
+-                                        TYPE_DIGITAL_CREDENTIAL, providerData);
+-                        if (response == null) {
+-                            androidx.credentials.exceptions.CreateCredentialException exception =
+-                                    PendingIntentHandler.retrieveCreateCredentialException(
+-                                            providerData);
+-                            if (exception != null) {
+-                                handleCreateCredentialException(code, exception, result);
+-                            } else {
+-                                result.reject(
+-                                        new CreateCredentialUnknownException("empty response"));
+-                            }
+-                            return;
+-                        }
+-                        String responseJson =
+-                                response.getData()
+-                                        .getString("androidx.credentials.BUNDLE_KEY_RESPONSE_JSON");
+-                        if (responseJson == null) {
+-                            result.reject(
+-                                    new CreateCredentialUnknownException(
+-                                            "Response doesn't contain responseJson"));
+-                            return;
+-                        }
+-                        Log.d(TAG, "Response JSON: " + responseJson);
+-
+-                        DigitalCredential digitalCredential = parseResponse(responseJson);
+-                        if (digitalCredential == null) {
+-                            result.reject(
+-                                    new CreateCredentialUnknownException(
+-                                            "Failed to parse response"));
+-                            return;
+-                        }
+-                        result.fulfill(digitalCredential);
+-                    }
+-                };
+-
+-        Bundle requestBundle = new Bundle();
+-        requestBundle.putString("androidx.credentials.BUNDLE_KEY_REQUEST_JSON", request);
+-        CreateCredentialRequest createRequest =
+-                new CreateCredentialRequest(
+-                        TYPE_DIGITAL_CREDENTIAL,
+-                        /* credentialData= */ requestBundle,
+-                        /* candidateQueryData= */ new Bundle(),
+-                        origin,
+-                        request,
+-                        resultReceiver);
+-
+-        client.createCredential(createRequest)
+-                .addOnSuccessListener(
+-                        response -> {
+-                            if (response.getPendingIntent() == null) {
+-                                Log.d(TAG, "Response doesn't contain pendingIntent");
+-                                result.reject(
+-                                        new CreateCredentialUnknownException(
+-                                                "Response doesn't contain pendingIntent"));
+-                                return;
+-                            }
+-                            Log.d(TAG, "Sending an intent for sender");
+-                            Log.d(TAG, request);
+-                            int requestCode =
+-                                    windowAndroid.showCancelableIntent(
+-                                            response.getPendingIntent(),
+-                                            (resultCode, intent) -> {
+-                                                if (resultCode != Activity.RESULT_OK
+-                                                        && result.isPending()) {
+-                                                    androidx.credentials.exceptions
+-                                                                    .CreateCredentialException
+-                                                            exception =
+-                                                                    intent != null
+-                                                                            ? PendingIntentHandler
+-                                                                                    .retrieveCreateCredentialException(
+-                                                                                            intent)
+-                                                                            : null;
+-                                                    handleCreateCredentialException(
+-                                                            resultCode, exception, result);
+-                                                }
+-                                            },
+-                                            null);
+-                            if (requestCode == WindowAndroid.START_INTENT_FAILURE) {
+-                                Log.e(TAG, "Sending an intent for sender failed");
+-                                result.reject(
+-                                        new CreateCredentialUnknownException(
+-                                                "Failed to start intent"));
+-                            }
+-                        })
+-                .addOnFailureListener(
+-                        e -> {
+-                            if (!result.isPending()) {
+-                                return;
+-                            }
+-                            if (e
+-                                    instanceof
+-                                    com.google.android.gms.identitycredentials
+-                                            .CreateCredentialException) {
+-                                String exceptionType =
+-                                        ((com.google.android.gms.identitycredentials
+-                                                                .CreateCredentialException)
+-                                                        e)
+-                                                .getType();
+-                                if (TYPE_USER_CANCELED.equals(exceptionType)) {
+-                                    result.reject(
+-                                            new CreateCredentialCancellationException(
+-                                                    e.getMessage()));
+-                                } else if (TYPE_INTERRUPTED.equals(exceptionType)) {
+-                                    result.reject(
+-                                            new CreateCredentialInterruptedException(
+-                                                    e.getMessage()));
+-                                } else {
+-                                    result.reject(
+-                                            new CreateCredentialUnknownException(e.getMessage()));
+-                                }
+-                            } else {
+-                                result.reject(e);
+-                            }
+-                        });
+-
+-        return result;
++        return Promise.rejected();
+     }
+ 
+     private static @Nullable DigitalCredential parseResponse(String responseJson) {
+diff --git a/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsPresentationDelegate.java b/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsPresentationDelegate.java
+--- a/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsPresentationDelegate.java
++++ b/chrome/browser/webid/android/java/src/org/chromium/chrome/browser/webid/DigitalCredentialsPresentationDelegate.java
+@@ -7,25 +7,15 @@
+ import android.app.Activity;
+ import android.content.Intent;
+ import android.os.Bundle;
+-import android.os.Handler;
+-import android.os.Looper;
+-import android.os.ResultReceiver;
+ 
+ import androidx.annotation.OptIn;
+ import androidx.annotation.VisibleForTesting;
+ import androidx.credentials.Credential;
+ import androidx.credentials.ExperimentalDigitalCredentialApi;
+-import androidx.credentials.GetDigitalCredentialOption;
+ import androidx.credentials.exceptions.GetCredentialCancellationException;
+-import androidx.credentials.exceptions.GetCredentialInterruptedException;
+ import androidx.credentials.exceptions.GetCredentialUnknownException;
+-import androidx.credentials.exceptions.NoCredentialException;
+ import androidx.credentials.provider.PendingIntentHandler;
+ 
+-import com.google.android.gms.identitycredentials.CredentialOption;
+-import com.google.android.gms.identitycredentials.GetCredentialRequest;
+-import com.google.android.gms.identitycredentials.IdentityCredentialClient;
+-import com.google.android.gms.identitycredentials.IdentityCredentialManager;
+ 
+ import org.json.JSONException;
+ import org.json.JSONObject;
+@@ -38,7 +28,6 @@
+ import org.chromium.chrome.browser.webid.IdentityCredentialsDelegate.DigitalCredential;
+ import org.chromium.ui.base.WindowAndroid;
+ 
+-import java.util.Arrays;
+ 
+ @NullMarked
+ public class DigitalCredentialsPresentationDelegate {
+@@ -51,8 +40,6 @@
+     public static final String BUNDLE_KEY_PROVIDER_DATA =
+             "androidx.identitycredentials.BUNDLE_KEY_PROVIDER_DATA";
+ 
+-    private static final String EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER =
+-            "androidx.credentials.provider.EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER";
+ 
+     @VisibleForTesting
+     public static final String EXTRA_PASS_IT_BY_RESULT_RECEIVER =
+@@ -67,150 +54,11 @@
+     private static final String TYPE_INTERRUPTED =
+             "android.credentials.GetCredentialException.TYPE_INTERRUPTED";
+ 
+-    private Bundle mLargeResultData = Bundle.EMPTY;
+ 
+     @OptIn(markerClass = ExperimentalDigitalCredentialApi.class)
+     public Promise<DigitalCredential> get(
+             WindowAndroid windowAndroid, String origin, String request) {
+-        Activity window = windowAndroid.getActivity().get();
+-        if (window == null) return Promise.rejected();
+-
+-        final IdentityCredentialClient client;
+-        try {
+-            client = IdentityCredentialManager.Companion.getClient(window);
+-        } catch (Exception e) {
+-            // Thrown when running in phones without the most current GMS
+-            // version.
+-            return Promise.rejected();
+-        }
+-
+-        final Promise<DigitalCredential> result = new Promise<>();
+-
+-        final ResultReceiver largePayloadResultReceiver =
+-                new ResultReceiver(new Handler(Looper.getMainLooper())) {
+-                    @Override
+-                    protected void onReceiveResult(int resultCode, Bundle resultData) {
+-                        mLargeResultData = resultData;
+-                    }
+-                };
+-
+-        ResultReceiver resultReceiver =
+-                new ResultReceiver(new Handler(Looper.getMainLooper())) {
+-                    @Override
+-                    protected void onReceiveResult(int code, Bundle data) {
+-                        try {
+-                            handleOnReceiveResult(code, data, result, mLargeResultData);
+-                        } finally {
+-                            mLargeResultData = Bundle.EMPTY; // release the reference
+-                        }
+-                    }
+-                };
+-
+-        GetDigitalCredentialOption option = new GetDigitalCredentialOption(request);
+-        Bundle requestData = option.getRequestData();
+-        requestData.putParcelable(
+-                EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER,
+-                toIpcFriendlyResultReceiver(largePayloadResultReceiver));
+-
+-        client.getCredential(
+-                        new GetCredentialRequest(
+-                                Arrays.asList(
+-                                        new CredentialOption(
+-                                                option.getType(),
+-                                                requestData,
+-                                                option.getCandidateQueryData(),
+-                                                request,
+-                                                "",
+-                                                "")),
+-                                new Bundle(),
+-                                origin,
+-                                resultReceiver))
+-                .addOnSuccessListener(
+-                        response -> {
+-                            if (response.getPendingIntent() == null) {
+-                                Log.d(TAG, "Response doesn't contain pendingIntent");
+-                                result.reject(
+-                                        new GetCredentialUnknownException(
+-                                                "Response doesn't contain pendingIntent"));
+-                                return;
+-                            }
+-                            Log.d(TAG, "Sending an intent for sender");
+-                            Log.d(TAG, request);
+-                            int requestCode =
+-                                    windowAndroid.showCancelableIntent(
+-                                            response.getPendingIntent(),
+-                                            (resultCode, intent) -> {
+-                                                if (resultCode != Activity.RESULT_OK
+-                                                        && result.isPending()) {
+-                                                    androidx.credentials.exceptions
+-                                                                    .GetCredentialException
+-                                                            exception =
+-                                                                    intent != null
+-                                                                            ? PendingIntentHandler
+-                                                                                    .retrieveGetCredentialException(
+-                                                                                            intent)
+-                                                                            : null;
+-                                                    handleGetCredentialException(
+-                                                            resultCode, exception, result);
+-                                                }
+-                                            },
+-                                            null);
+-                            if (requestCode == WindowAndroid.START_INTENT_FAILURE) {
+-                                Log.e(TAG, "Sending an intent for sender failed");
+-                                result.reject(
+-                                        new GetCredentialUnknownException(
+-                                                "Failed to start intent"));
+-                            }
+-                        })
+-                .addOnFailureListener(
+-                        e -> {
+-                            if (!result.isPending()) {
+-                                return;
+-                            }
+-                            if (e
+-                                    instanceof
+-                                    com.google.android.gms.identitycredentials
+-                                            .GetCredentialException) {
+-                                String exceptionType =
+-                                        ((com.google.android.gms.identitycredentials
+-                                                                .GetCredentialException)
+-                                                        e)
+-                                                .getType();
+-                                if (TYPE_USER_CANCELED.equals(exceptionType)) {
+-                                    result.reject(
+-                                            new GetCredentialCancellationException(e.getMessage()));
+-                                } else if (TYPE_NO_CREDENTIAL.equals(exceptionType)) {
+-                                    result.reject(new NoCredentialException(e.getMessage()));
+-                                } else if (TYPE_INTERRUPTED.equals(exceptionType)) {
+-                                    result.reject(
+-                                            new GetCredentialInterruptedException(e.getMessage()));
+-                                } else {
+-                                    result.reject(
+-                                            new GetCredentialUnknownException(e.getMessage()));
+-                                }
+-                            } else {
+-                                result.reject(e);
+-                            }
+-                        });
+-
+-        return result;
+-    }
+-
+-    private <T extends ResultReceiver> @Nullable ResultReceiver toIpcFriendlyResultReceiver(
+-            @Nullable T resultReceiver) {
+-        if (resultReceiver == null) {
+-            return null;
+-        }
+-        android.os.Parcel parcel = android.os.Parcel.obtain();
+-        try {
+-            resultReceiver.writeToParcel(parcel, 0);
+-            parcel.setDataPosition(0);
+-            return ResultReceiver.CREATOR.createFromParcel(parcel);
+-        } catch (Exception e) {
+-            return null;
+-        } finally {
+-            parcel.recycle();
+-        }
++        return Promise.rejected();
+     }
+ 
+     @VisibleForTesting
+diff --git a/components/one_time_tokens/android/backend/common/java/src/org/chromium/components/one_time_tokens/backend/OneTimeTokensMetricsRecorder.java b/components/one_time_tokens/android/backend/common/java/src/org/chromium/components/one_time_tokens/backend/OneTimeTokensMetricsRecorder.java
+--- a/components/one_time_tokens/android/backend/common/java/src/org/chromium/components/one_time_tokens/backend/OneTimeTokensMetricsRecorder.java
++++ b/components/one_time_tokens/android/backend/common/java/src/org/chromium/components/one_time_tokens/backend/OneTimeTokensMetricsRecorder.java
+@@ -6,9 +6,6 @@
+ 
+ import android.os.SystemClock;
+ 
+-import com.google.android.gms.common.api.ApiException;
+-import com.google.android.gms.common.api.CommonStatusCodes;
+-
+ import org.chromium.base.metrics.RecordHistogram;
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.Nullable;
+@@ -62,18 +59,5 @@
+     }
+ 
+     private void reportErrorMetrics(Exception exception) {
+-        if (exception instanceof OneTimeTokensBackendException backendException) {
+-            RecordHistogram.recordEnumeratedHistogram(
+-                    getHistogramName(ERROR_CODE_METRIC_NAME),
+-                    backendException.getErrorCode(),
+-                    OneTimeTokensBackendErrorCode.MAX_VALUE);
+-            return;
+-        }
+-
+-        int errorCode = CommonStatusCodes.ERROR;
+-        if (exception instanceof ApiException apiException) {
+-            errorCode = apiException.getStatusCode();
+-        }
+-        RecordHistogram.recordSparseHistogram(getHistogramName(API_ERROR_METRIC_NAME), errorCode);
+     }
+ }
+diff --git a/components/one_time_tokens/android/backend/sms/java/src/org/chromium/components/one_time_tokens/backend/sms/AndroidSmsOtpFetchReceiverBridge.java b/components/one_time_tokens/android/backend/sms/java/src/org/chromium/components/one_time_tokens/backend/sms/AndroidSmsOtpFetchReceiverBridge.java
+--- a/components/one_time_tokens/android/backend/sms/java/src/org/chromium/components/one_time_tokens/backend/sms/AndroidSmsOtpFetchReceiverBridge.java
++++ b/components/one_time_tokens/android/backend/sms/java/src/org/chromium/components/one_time_tokens/backend/sms/AndroidSmsOtpFetchReceiverBridge.java
+@@ -4,9 +4,6 @@
+ 
+ package org.chromium.components.one_time_tokens.backend.sms;
+ 
+-import com.google.android.gms.common.api.ApiException;
+-import com.google.android.gms.common.api.CommonStatusCodes;
+-
+ import org.jni_zero.CalledByNative;
+ import org.jni_zero.JNINamespace;
+ import org.jni_zero.NativeClassQualifiedName;
+@@ -42,13 +39,7 @@
+     void onOtpValueRetrievalError(Exception exception) {
+         if (mNativeReceiverBridge == 0) return;
+ 
+-        int errorCode = CommonStatusCodes.ERROR;
+-        if (exception instanceof OneTimeTokensBackendException backendException) {
+-            errorCode = backendException.getErrorCode();
+-        }
+-        if (exception instanceof ApiException apiException) {
+-            errorCode = apiException.getStatusCode();
+-        }
++        int errorCode = /* CommonStatusCodes.ERROR */ 13;
+         AndroidSmsOtpFetchReceiverBridgeJni.get()
+                 .onOtpValueRetrievalError(mNativeReceiverBridge, errorCode);
+     }
+diff --git a/components/webauthn/android/BUILD.gn b/components/webauthn/android/BUILD.gn
+--- a/components/webauthn/android/BUILD.gn
++++ b/components/webauthn/android/BUILD.gn
+@@ -41,8 +41,6 @@
+     "java/src/org/chromium/components/webauthn/Barrier.java",
+     "java/src/org/chromium/components/webauthn/CreateConfirmationUiDelegate.java",
+     "java/src/org/chromium/components/webauthn/Fido2Api.java",
+-    "java/src/org/chromium/components/webauthn/Fido2ApiCall.java",
+-    "java/src/org/chromium/components/webauthn/Fido2ApiCallHelper.java",
+     "java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java",
+     "java/src/org/chromium/components/webauthn/FidoIntentSender.java",
+     "java/src/org/chromium/components/webauthn/GetMatchingCredentialIdsDelegate.java",
+diff --git a/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java b/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java
+--- a/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java
++++ b/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java
+@@ -27,8 +27,6 @@
+ import androidx.annotation.RequiresApi;
+ import androidx.annotation.VisibleForTesting;
+ 
+-import com.google.android.gms.tasks.Task;
+-
+ import org.jni_zero.JNINamespace;
+ import org.jni_zero.NativeMethods;
+ 
+@@ -50,7 +48,6 @@
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.Nullable;
+ import org.chromium.components.password_manager.BrowserAssistedLoginType;
+-import org.chromium.components.webauthn.Fido2ApiCall.Fido2ApiCallParams;
+ import org.chromium.components.webauthn.cred_man.CredManHelper;
+ import org.chromium.components.webauthn.cred_man.CredManSupportProvider;
+ import org.chromium.content_public.browser.ClientDataJson;
+@@ -152,12 +149,7 @@
+      */
+     public Fido2CredentialRequest(AuthenticationContextProvider authenticationContextProvider) {
+         mAuthenticationContextProvider = authenticationContextProvider;
+-        boolean playServicesAvailable;
+-        try {
+-            playServicesAvailable = Fido2ApiCallHelper.getInstance().arePlayServicesAvailable();
+-        } catch (Exception e) {
+-            playServicesAvailable = false;
+-        }
++        boolean playServicesAvailable = false;
+         mPlayServicesAvailable = playServicesAvailable;
+         mCredManHelper =
+                 new CredManHelper(mAuthenticationContextProvider, this, mPlayServicesAvailable);
+@@ -352,29 +344,6 @@
+                             /* credentialRequestResult= */ null);
+                     return;
+                 }
+-                try {
+-                    Fido2ApiCallHelper.getInstance()
+-                            .invokeFido2MakeCredential(
+-                                    mAuthenticationContextProvider,
+-                                    options,
+-                                    Uri.parse(convertOriginToString(origin)),
+-                                    clientDataHash,
+-                                    maybeBrowserOptions,
+-                                    getMaybeResultReceiver(Fido2ApiRequestType.MAKE_CREDENTIAL),
+-                                    (pendingIntent) ->
+-                                            onGotPendingIntent(
+-                                                    pendingIntent,
+-                                                    Fido2ApiRequestType.MAKE_CREDENTIAL),
+-                                    (e) ->
+-                                            onBinderCallException(
+-                                                    e, Fido2ApiRequestType.MAKE_CREDENTIAL));
+-                } catch (NoSuchAlgorithmException e) {
+-                    returnErrorAndResetCallback(
+-                            AuthenticatorStatus.ALGORITHM_UNSUPPORTED,
+-                            MakeCredentialOutcome.ALGORITHM_NOT_SUPPORTED,
+-                            /* credentialRequestResult= */ null);
+-                    return;
+-                }
+                 return;
+             }
+             int result =
+@@ -431,27 +400,6 @@
+                     /* credentialRequestResult= */ null);
+             return;
+         }
+-
+-        try {
+-            Fido2ApiCallHelper.getInstance()
+-                    .invokeFido2MakeCredential(
+-                            mAuthenticationContextProvider,
+-                            options,
+-                            Uri.parse(convertOriginToString(origin)),
+-                            clientDataHash,
+-                            maybeBrowserOptions,
+-                            getMaybeResultReceiver(Fido2ApiRequestType.MAKE_CREDENTIAL),
+-                            (pendingIntent) ->
+-                                    onGotPendingIntent(
+-                                            pendingIntent, Fido2ApiRequestType.MAKE_CREDENTIAL),
+-                            (e) -> onBinderCallException(e, Fido2ApiRequestType.MAKE_CREDENTIAL));
+-        } catch (NoSuchAlgorithmException e) {
+-            returnErrorAndResetCallback(
+-                    AuthenticatorStatus.ALGORITHM_UNSUPPORTED,
+-                    MakeCredentialOutcome.ALGORITHM_NOT_SUPPORTED,
+-                    /* credentialRequestResult= */ null);
+-            return;
+-        }
+     }
+ 
+     @SuppressWarnings("NewApi")
+@@ -927,32 +875,6 @@
+             callback.onIsUserVerifyingPlatformAuthenticatorAvailableResponse(false);
+             return;
+         }
+-
+-        Fido2ApiCallParams params =
+-                WebauthnModeProvider.getInstance()
+-                        .getFido2ApiCallParams(mAuthenticationContextProvider.getWebContents());
+-        assertNonNull(mAuthenticationContextProvider.getContext());
+-        assertNonNull(params);
+-        Fido2ApiCall call = new Fido2ApiCall(mAuthenticationContextProvider.getContext(), params);
+-        Fido2ApiCall.BooleanResult result = new Fido2ApiCall.BooleanResult();
+-        Parcel args = call.start();
+-        args.writeStrongBinder(result);
+-
+-        Task<Boolean> task =
+-                call.run(
+-                        params.mIsUserVerifyingPlatformAuthenticatorAvailableMethodId,
+-                        Fido2ApiCall.TRANSACTION_ISUVPAA,
+-                        args,
+-                        result);
+-        task.addOnSuccessListener(
+-                (isUvpaa) -> {
+-                    callback.onIsUserVerifyingPlatformAuthenticatorAvailableResponse(isUvpaa);
+-                });
+-        task.addOnFailureListener(
+-                (e) -> {
+-                    logError(TAG, "FIDO2 API call failed", e);
+-                    callback.onIsUserVerifyingPlatformAuthenticatorAvailableResponse(false);
+-                });
+     }
+ 
+     public void handleReportRequest(PublicKeyCredentialReportOptions options, Origin origin) {
+@@ -1296,16 +1218,6 @@
+         if (options.mediation == Mediation.CONDITIONAL) {
+             mCancellableUiState = CancellableUiState.REQUEST_SENT_TO_PLATFORM;
+         }
+-
+-        Fido2ApiCallHelper.getInstance()
+-                .invokeFido2GetAssertion(
+-                        mAuthenticationContextProvider,
+-                        publicKeyOptions,
+-                        Uri.parse(callerOriginString),
+-                        clientDataHash,
+-                        getMaybeResultReceiver(requestType),
+-                        (pendingIntent) -> onGotPendingIntent(pendingIntent, requestType),
+-                        (e) -> onBinderCallException(e, requestType));
+     }
+ 
+     private void handleNonCredentialReturn(GetCredentialOptions options, Integer reason) {
+@@ -1350,29 +1262,6 @@
+         assert mCancellableUiState == CancellableUiState.NONE
+                 || mCancellableUiState == CancellableUiState.REQUEST_SENT_TO_PLATFORM
+                 || mCancellableUiState == CancellableUiState.WAITING_FOR_SELECTION;
+-
+-        if (mCancellableUiState == CancellableUiState.REQUEST_SENT_TO_PLATFORM) {
+-            logError(
+-                    TAG,
+-                    "Received a second credential selection while the first still in progress.");
+-            return;
+-        }
+-        if (isConditional) {
+-            mCancellableUiState = CancellableUiState.REQUEST_SENT_TO_PLATFORM;
+-        } else {
+-            mCancellableUiState = CancellableUiState.NONE;
+-        }
+-
+-        Fido2ApiCallHelper.getInstance()
+-                .invokeFido2HybridGetAssertion(
+-                        mAuthenticationContextProvider,
+-                        options,
+-                        Uri.parse(callerOriginString),
+-                        clientDataHash,
+-                        (pendingIntent) ->
+-                                onGotPendingIntent(
+-                                        pendingIntent, Fido2ApiRequestType.GET_ASSERTION_HYBRID),
+-                        (e) -> onBinderCallException(e, Fido2ApiRequestType.GET_ASSERTION_HYBRID));
+     }
+ 
+     // Handles a PendingIntent from the GMSCore FIDO library.
+diff --git a/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreGetCredentialsHelper.java b/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreGetCredentialsHelper.java
+--- a/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreGetCredentialsHelper.java
++++ b/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreGetCredentialsHelper.java
+@@ -8,7 +8,6 @@
+ 
+ import android.os.SystemClock;
+ 
+-import com.google.android.gms.tasks.OnFailureListener;
+ 
+ import org.chromium.base.ResettersForTesting;
+ import org.chromium.base.metrics.RecordHistogram;
+@@ -80,6 +79,9 @@
+     public interface GetCredentialsCallback {
+         void onCredentialsReceived(List<WebauthnCredentialDetails> credentials);
+     }
++    public interface OnFailureListener {
++        void onFailure(Exception exception);
++    }
+ 
+     public static GmsCoreGetCredentialsHelper getInstance() {
+         if (sInstance == null) {
+@@ -106,72 +108,7 @@
+             String relyingPartyId, Reason reason, GetCredentialsCallback successCallback,
+             OnFailureListener failureCallback) {
+         log(TAG, "getCredentials with reason: " + reason);
+-        final long startTimeMs = SystemClock.elapsedRealtime();
+-        if (reason == Reason.GET_ASSERTION_NON_GOOGLE && GmsCoreUtils.isPasskeyCacheSupported()) {
+-            Fido2ApiCallHelper.getInstance()
+-                    .invokePasskeyCacheGetCredentials(authenticationContextProvider, relyingPartyId,
+-                            (credentials)
+-                                    -> {
+-                                recordSuccessMetrics(credentials, reason,
+-                                        GmsCoreGetCredentialsResult.CACHE_SUCCESS, startTimeMs);
+-                                successCallback.onCredentialsReceived(credentials);
+-                            },
+-                            (e) -> {
+-                                log(
+-                                        TAG,
+-                                        "invokePasskeyCacheGetCredentials() failed. Falling back to"
+-                                                + " FIDO2. ",
+-                                        e);
+-                                getCredentialsFromFido2Api(
+-                                        authenticationContextProvider,
+-                                        relyingPartyId,
+-                                        reason,
+-                                        successCallback,
+-                                        failureCallback,
+-                                        GmsCoreGetCredentialsResult.CACHE_FAILURE_FALLBACK_SUCCESS,
+-                                        GmsCoreGetCredentialsResult.CACHE_FAILURE_FALLBACK_FAILURE,
+-                                        startTimeMs);
+-                            });
+-        } else {
+-            recordNoCacheReason(reason);
+-            getCredentialsFromFido2Api(
+-                    authenticationContextProvider,
+-                    relyingPartyId,
+-                    reason,
+-                    successCallback,
+-                    failureCallback,
+-                    GmsCoreGetCredentialsResult.FIDO2_SUCCESS,
+-                    GmsCoreGetCredentialsResult.FIDO2_FAILURE,
+-                    startTimeMs);
+-        }
+-    }
+-
+-    private void getCredentialsFromFido2Api(
+-            AuthenticationContextProvider authenticationContextProvider,
+-            String relyingPartyId,
+-            Reason reason,
+-            GetCredentialsCallback successCallback,
+-            OnFailureListener failureCallback,
+-            @GmsCoreGetCredentialsResult int successMetric,
+-            @GmsCoreGetCredentialsResult int failureMetric,
+-            long startTimeMs) {
+-        log(TAG, "getCredentialsFromFido2Api");
+-        Fido2ApiCallHelper.getInstance()
+-                .invokeFido2GetCredentials(
+-                        authenticationContextProvider,
+-                        relyingPartyId,
+-                        (credentials) -> {
+-                            recordSuccessMetrics(credentials, reason, successMetric, startTimeMs);
+-                            successCallback.onCredentialsReceived(credentials);
+-                        },
+-                        (e) -> {
+-                            log(TAG, "invokeFido2GetCredentials() failed. ", e);
+-                            RecordHistogram.recordEnumeratedHistogram(
+-                                    GET_CREDENTIALS_RESULT_HISTOGRAM,
+-                                    failureMetric,
+-                                    GmsCoreGetCredentialsResult.NUM_ENTRIES);
+-                            failureCallback.onFailure(e);
+-                        });
++        failureCallback.onFailure(new Exception());
+     }
+ 
+     private void recordSuccessMetrics(
+diff --git a/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreUtils.java b/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreUtils.java
+--- a/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreUtils.java
++++ b/components/webauthn/android/java/src/org/chromium/components/webauthn/GmsCoreUtils.java
+@@ -4,9 +4,6 @@
+ 
+ package org.chromium.components.webauthn;
+ 
+-import com.google.android.gms.tasks.OnFailureListener;
+-import com.google.android.gms.tasks.OnSuccessListener;
+-
+ import org.chromium.base.PackageUtils;
+ import org.chromium.base.ResettersForTesting;
+ import org.chromium.base.task.PostTask;
+@@ -15,28 +12,13 @@
+ 
+ @NullMarked
+ public class GmsCoreUtils {
+-    private static final String GMSCORE_PACKAGE_NAME = "com.google.android.gms";
+-    private static final int GMSCORE_MIN_VERSION_GET_MATCHING_CRED_IDS = 223300000;
+-    private static final int GMSCORE_MIN_VERSION_HYBRID_API = 231206000;
+-    private static final int GMSCORE_MIN_VERSION_PASSKEY_CACHE = 244400000;
+-    private static final int GMSCORE_MIN_VERSION_RESULT_RECEIVER = 240700000;
+-    // This version is the minimum needed for dynamic lookup of services, which
+-    // the persistent API requires.
+-    static final int GMSCORE_MIN_VERSION_DYNAMIC_LOOKUP = 17895000;
+-    static final int GMSCORE_MIN_VERSION = 16890000;
+-
+-    private static int sGmsCorePackageVersion;
+-
+     public static int getGmsCoreVersion() {
+-        if (sGmsCorePackageVersion == 0) {
+-            sGmsCorePackageVersion = PackageUtils.getPackageVersion(GMSCORE_PACKAGE_NAME);
+-        }
+-        return sGmsCorePackageVersion;
++        return 0;
+     }
+ 
+     /** Returns whether WebAuthn APIs are supported in GMSCore. */
+     public static boolean isWebauthnSupported() {
+-        return getGmsCoreVersion() >= GMSCORE_MIN_VERSION;
++        return false;
+     }
+ 
+     /**
+@@ -45,28 +27,22 @@
+      * version.
+      */
+     public static boolean isGetMatchingCredentialIdsSupported() {
+-        return getGmsCoreVersion() >= GMSCORE_MIN_VERSION_GET_MATCHING_CRED_IDS;
++        return false;
+     }
+ 
+     /** Returns whether the hybrid sign in API is supported. */
+     public static boolean isHybridClientApiSupported() {
+-        return getGmsCoreVersion() >= GMSCORE_MIN_VERSION_HYBRID_API;
++        return false;
+     }
+ 
+     /** Returns whether makeCredential / getAssertion APIs support responding via ResultReceiver. */
+     static boolean isResultReceiverSupported() {
+-        return getGmsCoreVersion() >= GMSCORE_MIN_VERSION_RESULT_RECEIVER;
++        return false;
+     }
+ 
+     /** Returns whether the passkey cache is supported. */
+     public static boolean isPasskeyCacheSupported() {
+-        return getGmsCoreVersion() >= GMSCORE_MIN_VERSION_PASSKEY_CACHE;
+-    }
+-
+-    public static void setGmsCoreVersionForTesting(int version) {
+-        int previousVersion = sGmsCorePackageVersion;
+-        sGmsCorePackageVersion = version;
+-        ResettersForTesting.register(() -> sGmsCorePackageVersion = previousVersion);
++        return false;
+     }
+ 
+     /**
+@@ -74,30 +50,30 @@
+      * inner callback's invocation to the UI thread to avoid contention over state. Intent callbacks
+      * can be run on a different thread from the one on which they were originally invoked.
+      */
+-    public static <T> OnSuccessListener<T> wrapSuccessCallback(OnSuccessListener<T> callback) {
+-        return (result) -> {
+-            PostTask.runOrPostTask(
+-                    TaskTraits.UI_USER_VISIBLE,
+-                    () -> {
+-                        callback.onSuccess(result);
+-                    });
+-        };
+-    }
++    // public static <T> OnSuccessListener<T> wrapSuccessCallback(OnSuccessListener<T> callback) {
++    //     return (result) -> {
++    //         PostTask.runOrPostTask(
++    //                 TaskTraits.UI_USER_VISIBLE,
++    //                 () -> {
++    //                     callback.onSuccess(result);
++    //                 });
++    //     };
++    // }
+ 
+     /**
+      * Returns a FailureListener callback that wraps another FailureListener callback, but posts the
+      * inner callback's invocation to the UI thread to avoid contention over state. Intent callbacks
+      * can be run on a different thread from the one on which they were originally invoked.
+      */
+-    public static OnFailureListener wrapFailureCallback(OnFailureListener callback) {
+-        // Post callbacks to UI thread to avoid contention over state, since this can be called
+-        // on a different thread than was originally used to invoke the Intent.
+-        return (e) -> {
+-            PostTask.runOrPostTask(
+-                    TaskTraits.UI_USER_VISIBLE,
+-                    () -> {
+-                        callback.onFailure(e);
+-                    });
+-        };
+-    }
++    // public static OnFailureListener wrapFailureCallback(OnFailureListener callback) {
++    //     // Post callbacks to UI thread to avoid contention over state, since this can be called
++    //     // on a different thread than was originally used to invoke the Intent.
++    //     return (e) -> {
++    //         PostTask.runOrPostTask(
++    //                 TaskTraits.UI_USER_VISIBLE,
++    //                 () -> {
++    //                     callback.onFailure(e);
++    //                 });
++    //     };
++    // }
+ }
+diff --git a/components/webauthn/android/java/src/org/chromium/components/webauthn/IdentityCredentialsHelper.java b/components/webauthn/android/java/src/org/chromium/components/webauthn/IdentityCredentialsHelper.java
+--- a/components/webauthn/android/java/src/org/chromium/components/webauthn/IdentityCredentialsHelper.java
++++ b/components/webauthn/android/java/src/org/chromium/components/webauthn/IdentityCredentialsHelper.java
+@@ -13,12 +13,6 @@
+ 
+ import androidx.annotation.VisibleForTesting;
+ 
+-import com.google.android.gms.identitycredentials.CreateCredentialHandle;
+-import com.google.android.gms.identitycredentials.CreateCredentialRequest;
+-import com.google.android.gms.identitycredentials.IdentityCredentialClient;
+-import com.google.android.gms.identitycredentials.IdentityCredentialManager;
+-import com.google.android.gms.identitycredentials.SignalCredentialStateRequest;
+-
+ import org.jni_zero.JNINamespace;
+ 
+ import org.chromium.blink.mojom.AuthenticatorStatus;
+@@ -57,70 +51,15 @@
+         log(TAG, "handleConditionalCreateRequest");
+         WebauthnRequestCallback callback =
+                 assertNonNull(mAuthenticationContextProvider.getRequestCallback());
+-        try {
+-            IdentityCredentialClient client =
+-                    IdentityCredentialManager.Companion.getClient(
+-                            assertNonNull(mAuthenticationContextProvider.getContext()));
+-            client.createCredential(buildConditionalCreateRequest(options, origin, clientDataHash))
+-                    .addOnSuccessListener(
+-                            GmsCoreUtils.wrapSuccessCallback(
+-                                    (handle) ->
+-                                            onConditionalCreateSuccess(
+-                                                    clientDataJson, options, handle)))
+-                    .addOnFailureListener(
+-                            GmsCoreUtils.wrapFailureCallback(this::onConditionalCreateFailure));
+-        } catch (Exception e) {
+-            logError(TAG, "CreateCredential failed ", e);
+-            callback.onComplete(
+-                    WebauthnRequestResponse.forFailedMakeCredential(
+-                            AuthenticatorStatus.NOT_ALLOWED_ERROR,
+-                            new RequestMetrics.Builder()
+-                                    .setMakeCredentialOutcome(MakeCredentialOutcome.OTHER_FAILURE)
+-                                    .setMakeCredentialResult(
+-                                            CredentialRequestResult
+-                                                    .ANDROID_IDENTITY_CREDENTIALS_ERROR)
+-                                    .build()));
+-            return;
+-        }
+-    }
+-
+-    private void onConditionalCreateSuccess(
+-            byte @Nullable [] clientDataJson,
+-            PublicKeyCredentialCreationOptions options,
+-            CreateCredentialHandle handle) {
+-        log(TAG, "onConditionalCreateSuccess");
+-        Bundle data = assertNonNull(handle.getCreateCredentialResponse()).getData();
+-        MakeCredentialAuthenticatorResponse response =
+-                CredManHelper.parseCreateCredentialResponseData(data);
+-        if (response == null) {
+-            log(TAG, "parseCreateCredentialResponseData() failed");
+-            assumeNonNull(mAuthenticationContextProvider.getRequestCallback())
+-                    .onComplete(
+-                            WebauthnRequestResponse.forFailedMakeCredential(
+-                                    AuthenticatorStatus.NOT_ALLOWED_ERROR,
+-                                    new RequestMetrics.Builder()
+-                                            .setMakeCredentialOutcome(
+-                                                    MakeCredentialOutcome.OTHER_FAILURE)
+-                                            .setMakeCredentialResult(
+-                                                    CredentialRequestResult
+-                                                            .ANDROID_IDENTITY_CREDENTIALS_ERROR)
+-                                            .build()));
+-            return;
+-        }
+-        if (clientDataJson != null) {
+-            response.info.clientDataJson = clientDataJson;
+-        }
+-        response.echoCredProps = options.credProps;
+-        assumeNonNull(mAuthenticationContextProvider.getRequestCallback())
+-                .onComplete(
+-                        WebauthnRequestResponse.forSuccessfulMakeCredential(
+-                                response,
+-                                new RequestMetrics.Builder()
+-                                        .setMakeCredentialOutcome(MakeCredentialOutcome.SUCCESS)
+-                                        .setMakeCredentialResult(
+-                                                CredentialRequestResult
+-                                                        .ANDROID_IDENTITY_CREDENTIALS_SUCCESS)
+-                                        .build()));
++        callback.onComplete(
++                WebauthnRequestResponse.forFailedMakeCredential(
++                        AuthenticatorStatus.NOT_ALLOWED_ERROR,
++                        new RequestMetrics.Builder()
++                                .setMakeCredentialOutcome(MakeCredentialOutcome.OTHER_FAILURE)
++                                .setMakeCredentialResult(
++                                        CredentialRequestResult
++                                                .ANDROID_IDENTITY_CREDENTIALS_ERROR)
++                                .build()));
+     }
+ 
+     private void onConditionalCreateFailure(Exception e) {
+@@ -154,70 +93,5 @@
+     // Dispatches a Report request.
+     public void handleReportRequest(
+             PublicKeyCredentialReportOptions options, @Nullable String origin) {
+-        log(TAG, "handleReportRequest");
+-        try {
+-            IdentityCredentialClient client =
+-                    IdentityCredentialManager.Companion.getClient(
+-                            assertNonNull(mAuthenticationContextProvider.getContext()));
+-            client.signalCredentialState(buildSignalCredentialStateRequest(options, origin))
+-                    .addOnSuccessListener(
+-                            GmsCoreUtils.wrapSuccessCallback(
+-                                    (handle) ->
+-                                            log(TAG, "Signal API request completed successfully")))
+-                    .addOnFailureListener(
+-                            GmsCoreUtils.wrapFailureCallback(
+-                                    (e) -> logError(TAG, "Signal API Report request failed ", e)));
+-        } catch (Exception e) {
+-            logError(TAG, "handleReportRequest failed ", e);
+-            return;
+-        }
+-    }
+-
+-    @VisibleForTesting
+-    public SignalCredentialStateRequest buildSignalCredentialStateRequest(
+-            PublicKeyCredentialReportOptions options, @Nullable String origin) {
+-        String type;
+-        if (options.unknownCredentialId != null) {
+-            type = CRED_MAN_PREFIX + "SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE";
+-        } else if (options.allAcceptedCredentials != null) {
+-            type = CRED_MAN_PREFIX + "SIGNAL_ALL_ACCEPTED_CREDENTIALS_REQUEST_TYPE";
+-        } else {
+-            assert (options.currentUserDetails != null);
+-            type = CRED_MAN_PREFIX + "SIGNAL_CURRENT_USER_DETAILS_STATE_REQUEST_TYPE";
+-        }
+-
+-        String requestJson =
+-                Fido2CredentialRequestJni.get().reportOptionsToJson(options.serialize());
+-        Bundle requestDataBundle = new Bundle();
+-        requestDataBundle.putCharSequence(CRED_MAN_PREFIX + "signal_request_json_key", requestJson);
+-
+-        return new SignalCredentialStateRequest(type, origin, requestDataBundle);
+-    }
+-
+-    @VisibleForTesting
+-    public CreateCredentialRequest buildConditionalCreateRequest(
+-            PublicKeyCredentialCreationOptions options,
+-            String origin,
+-            byte @Nullable [] clientDataHash) {
+-        String requestJson =
+-                Fido2CredentialRequestJni.get().createOptionsToJson(options.serialize());
+-
+-        Bundle credentialData = requestBundle(requestJson, clientDataHash);
+-        Bundle displayInfo = new Bundle();
+-        displayInfo.putCharSequence(CRED_MAN_PREFIX + "BUNDLE_KEY_USER_ID", options.user.name);
+-        displayInfo.putCharSequence(
+-                CRED_MAN_PREFIX + "BUNDLE_KEY_USER_DISPLAY_NAME", options.user.displayName);
+-        credentialData.putBundle(CRED_MAN_PREFIX + "BUNDLE_KEY_REQUEST_DISPLAY_INFO", displayInfo);
+-
+-        Bundle candidateQueryData = requestBundle(requestJson, clientDataHash);
+-        candidateQueryData.putBoolean(CRED_MAN_PREFIX + "BUNDLE_KEY_IS_CONDITIONAL_REQUEST", true);
+-
+-        return new CreateCredentialRequest(
+-                CRED_MAN_PREFIX + "TYPE_PUBLIC_KEY_CREDENTIAL",
+-                credentialData,
+-                candidateQueryData,
+-                origin,
+-                requestJson,
+-                null);
+     }
+ }
+diff --git a/components/webauthn/android/java/src/org/chromium/components/webauthn/WebauthnModeProvider.java b/components/webauthn/android/java/src/org/chromium/components/webauthn/WebauthnModeProvider.java
+--- a/components/webauthn/android/java/src/org/chromium/components/webauthn/WebauthnModeProvider.java
++++ b/components/webauthn/android/java/src/org/chromium/components/webauthn/WebauthnModeProvider.java
+@@ -9,7 +9,6 @@
+ 
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.Nullable;
+-import org.chromium.components.webauthn.Fido2ApiCall.Fido2ApiCallParams;
+ import org.chromium.components.webauthn.cred_man.AppCredManRequestDecorator;
+ import org.chromium.components.webauthn.cred_man.BrowserCredManRequestDecorator;
+ import org.chromium.components.webauthn.cred_man.CredManRequestDecorator;
+@@ -48,20 +47,6 @@
+         } else {
+             assert false : "WebauthnMode not set! See this class's JavaDoc.";
+         }
+-        return null;
+-    }
+-
+-    public @Nullable Fido2ApiCallParams getFido2ApiCallParams(@Nullable WebContents webContents) {
+-        int mode = getWebauthnMode(webContents);
+-        if (mode == WebauthnMode.APP) {
+-            return Fido2ApiCall.APP_API;
+-        } else if (mode == WebauthnMode.BROWSER
+-                || mode == WebauthnMode.CHROME
+-                || mode == WebauthnMode.CHROME_3PP_ENABLED) {
+-            return Fido2ApiCall.BROWSER_API;
+-        } else {
+-            assert false : "WebauthnMode not set! See this class's JavaDoc.";
+-        }
+         return null;
+     }
+ 

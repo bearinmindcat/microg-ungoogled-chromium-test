@@ -1,0 +1,35 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
+--- /dev/null
++++ b/components/safe_browsing/core/common/safe_browsing_state.h
+@@ -0,0 +1,21 @@
++// Copyright 2024 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef COMPONENTS_SAFE_BROWSING_CORE_COMMON_SAFE_BROWSING_STATE_H_
++#define COMPONENTS_SAFE_BROWSING_CORE_COMMON_SAFE_BROWSING_STATE_H_
++
++namespace safe_browsing {
++
++// A Java counterpart will be generated for this enum.
++// GENERATED_JAVA_ENUM_PACKAGE: org.chromium.chrome.browser.safe_browsing
++enum class SafeBrowsingState {
++  NO_SAFE_BROWSING = 0,
++  STANDARD_PROTECTION = 1,
++  ENHANCED_PROTECTION = 2,
++  kMaxValue = ENHANCED_PROTECTION,
++};
++
++}  // namespace safe_browsing
++
++#endif  // COMPONENTS_SAFE_BROWSING_CORE_COMMON_SAFE_BROWSING_STATE_H_
+--- a/chrome/browser/safe_browsing/android/BUILD.gn
++++ b/chrome/browser/safe_browsing/android/BUILD.gn
+@@ -224,5 +224,6 @@ java_cpp_enum("safe_browsing_enums") {
+ java_cpp_enum("safe_browsing_enums") {
+   sources = [
+     "//components/safe_browsing/core/common/safe_browsing_settings_metrics.h",
++    "//components/safe_browsing/core/common/safe_browsing_state.h",
+   ]
+ }

@@ -1,0 +1,12 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
+--- a/chrome/android/proguard/main.flags
++++ b/chrome/android/proguard/main.flags
+@@ -39,4 +39,5 @@
+ 
+ # Test APK targets do not include the XR bundle code, but do include XrModule.java,
+ # which references XrModuleProvider via an @IdentifierNameString.
+--dontwarn org.chromium.chrome.browser.xr.scenecore.XrModuleProviderImpl
+\ No newline at end of file
++-dontwarn org.chromium.chrome.browser.xr.scenecore.XrModuleProviderImpl
++-dontwarn com.google.android.apps.common.proguard.**

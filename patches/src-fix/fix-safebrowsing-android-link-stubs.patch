@@ -1,0 +1,54 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
+diff --git a/chrome/browser/interstitials/chrome_settings_page_helper.cc b/chrome/browser/interstitials/chrome_settings_page_helper.cc
+index 86a8824bfc0d9..9e43c7b8426cf 100644
+--- a/chrome/browser/interstitials/chrome_settings_page_helper.cc
++++ b/chrome/browser/interstitials/chrome_settings_page_helper.cc
+@@ -33,9 +33,6 @@ ChromeSettingsPageHelper::CreateChromeSettingsPageHelper() {
+ void ChromeSettingsPageHelper::OpenEnhancedProtectionSettings(
+     content::WebContents* web_contents) const {
+ #if BUILDFLAG(IS_ANDROID)
+-  safe_browsing::ShowSafeBrowsingSettings(
+-      web_contents->GetTopLevelNativeWindow(),
+-      safe_browsing::SettingsAccessPoint::kSecurityInterstitial);
+ #else
+   // In rare circumstances, this happens outside of a Browser, better ignore
+   // than crash.
+@@ -70,8 +68,6 @@ void ChromeSettingsPageHelper::OpenEnhancedProtectionSettingsWithIph(
+ #if BUILDFLAG(IS_ANDROID)
+ void ChromeSettingsPageHelper::OpenAdvancedProtectionSettings(
+     content::WebContents& web_contents) {
+-  safe_browsing::ShowAdvancedProtectionSettings(
+-      web_contents.GetTopLevelNativeWindow());
+ }
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+diff --git a/chrome/browser/notifications/notification_platform_bridge_android.cc b/chrome/browser/notifications/notification_platform_bridge_android.cc
+index 3d095ac3f41b9..6350f34f28a32 100644
+--- a/chrome/browser/notifications/notification_platform_bridge_android.cc
++++ b/chrome/browser/notifications/notification_platform_bridge_android.cc
+@@ -492,12 +492,6 @@ void NotificationPlatformBridgeAndroid::AlwaysAllowNotifications(
+       base::Value(
+           base::DictValue().Set(safe_browsing::kIsAllowlistedByUserKey, true)));
+ 
+-  safe_browsing::NotificationContentDetectionUkmUtil::
+-      RecordSuspiciousNotificationInteractionUkm(
+-          static_cast<int>(
+-              safe_browsing::SuspiciousNotificationWarningInteractions::
+-                  kAlwaysAllow),
+-          url, notification_id, profile);
+ 
+   // Send a new notification to tell the user that Chrome will no longer hide
+   // notifications from `url`.
+diff --git a/chrome/browser/component_updater/registration.cc b/chrome/browser/component_updater/registration.cc
+index f891c619c6cdc..2487c932ae84d 100644
+--- a/chrome/browser/component_updater/registration.cc
++++ b/chrome/browser/component_updater/registration.cc
+@@ -196,7 +196,6 @@
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
+ #if BUILDFLAG(IS_ANDROID)
+-  RegisterRealTimeUrlChecksAllowlistComponent(cus);
+ #endif  // BUIDLFLAG(IS_ANDROID)
+ 
+ 

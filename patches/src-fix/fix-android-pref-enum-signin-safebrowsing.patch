@@ -1,0 +1,14 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
+--- a/chrome/browser/preferences/BUILD.gn
++++ b/chrome/browser/preferences/BUILD.gn
+@@ -72,7 +72,9 @@
+     "//components/payments/core/payment_prefs.h",
+     "//components/policy/core/common/policy_pref_names.h",
+     "//components/privacy_sandbox/privacy_sandbox_prefs.h",
++    "//components/safe_browsing/core/common/safe_browsing_prefs.h",
+     "//components/safety_check/safety_check_pref_names.h",
++    "//components/signin/public/base/signin_pref_names.cc",
+     "//components/saved_tab_groups/public/pref_names.h",
+     "//components/supervised_user/core/common/pref_names.h",
+     "//components/translate/core/browser/translate_pref_names.h",

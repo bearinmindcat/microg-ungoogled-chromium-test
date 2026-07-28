@@ -2,17 +2,29 @@ description: fix a call in template_url_service_android.cc
 author: Wengling Chen <feiyu2817@gmail.com>
 
 ---
- components/search_engines/android/template_url_service_android.cc |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ components/search_engines/android/template_url_service_android.cc |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
+diff --git a/components/search_engines/android/template_url_service_android.cc b/components/search_engines/android/template_url_service_android.cc
+index 627f419..3045862 100644
 --- a/components/search_engines/android/template_url_service_android.cc
 +++ b/components/search_engines/android/template_url_service_android.cc
-@@ -326,7 +326,7 @@ jboolean TemplateUrlServiceAndroid::SetP
-       TemplateURLService::LogSearchTemplateURLEvent(
-           TemplateURLService::MIGRATE_SAFE_FOR_AUTOREPLACE_PLAY_API_ENGINE);
-       template_url_service_->ResetTemplateURL(turl, turl->short_name(),
--                                              turl->keyword(), turl->url());
-+                                              turl->keyword(), turl->url(), "");
+@@ -449,7 +449,7 @@ bool TemplateUrlServiceAndroid::SetPlayAPISearchEngine(
+     if (regulatory_api_turl->safe_for_autoreplace()) {
+       template_url_service_->ResetTemplateURL(
+           regulatory_api_turl, regulatory_api_turl->short_name(),
+-          regulatory_api_turl->keyword(), regulatory_api_turl->url());
++          regulatory_api_turl->keyword(), regulatory_api_turl->url(), "");
      }
-     return false;
    }
+ 
+@@ -504,7 +504,8 @@ bool TemplateUrlServiceAndroid::EditSearchEngine(
+   }
+ 
+   template_url_service_->ResetTemplateURL(template_url, short_name, new_keyword,
+-                                          search_url);
++                                          search_url,
++                                          template_url->suggestions_url());
+   return true;
+ }
+ 

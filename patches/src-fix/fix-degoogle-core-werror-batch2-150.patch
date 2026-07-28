@@ -1,0 +1,220 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
+--- a/chrome/browser/navigation_predictor/navigation_predictor.cc
++++ b/chrome/browser/navigation_predictor/navigation_predictor.cc
+@@ -104,11 +104,11 @@
+ }
+ 
+ 
+-base::TimeDelta MLModelMaxHoverTime() {
++[[maybe_unused]] base::TimeDelta MLModelMaxHoverTime() {
+   return blink::features::kPreloadingModelMaxHoverTime.Get();
+ }
+ 
+-void RecordMetricsForModelTraining(
++[[maybe_unused]] void RecordMetricsForModelTraining(
+     const PreloadingModelKeyedService::Inputs& inputs,
+     ukm::SourceId ukm_source,
+     std::optional<double> sampling_likelihood,
+--- a/chrome/browser/page_content_annotations/page_content_annotations_service_factory.cc
++++ b/chrome/browser/page_content_annotations/page_content_annotations_service_factory.cc
+@@ -60,7 +60,7 @@
+   return entry && entry->IsEphemeral();
+ }
+ 
+-bool ShouldEnablePageContentAnnotations(Profile* profile) {
++[[maybe_unused]] bool ShouldEnablePageContentAnnotations(Profile* profile) {
+   if (IsRunningInAppMode()) {
+     // The annotations we provide cannot provide any benefit to users in kiosk
+     // mode, so we can skip.
+--- a/chrome/browser/profiles/profile_avatar_downloader.cc
++++ b/chrome/browser/profiles/profile_avatar_downloader.cc
+@@ -20,7 +20,7 @@
+ #include "ui/gfx/image/image.h"
+ 
+ namespace {
+-const char kHighResAvatarDownloadUrlPrefix[] =
++[[maybe_unused]] const char kHighResAvatarDownloadUrlPrefix[] =
+     "https://www.95tat1c.qjz9zk/chrome/profile_avatars/";
+ }
+ 
+--- a/chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.cc
++++ b/chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.cc
+@@ -2,6 +2,9 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++// safe-browsing removal shadows a prefs var
++#pragma clang diagnostic ignored "-Wshadow"
++
+ #include "chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.h"
+ 
+ #include "chrome/browser/browser_process.h"
+--- a/chrome/browser/search/search.cc
++++ b/chrome/browser/search/search.cc
+@@ -97,7 +97,7 @@
+   NEW_TAB_URL_MAX
+ };
+ 
+-const TemplateURL* GetDefaultSearchProviderTemplateURL(Profile* profile) {
++[[maybe_unused]] const TemplateURL* GetDefaultSearchProviderTemplateURL(Profile* profile) {
+   if (profile) {
+     TemplateURLService* template_url_service =
+         TemplateURLServiceFactory::GetForProfile(profile);
+@@ -144,7 +144,7 @@
+                                     IsMatchingServiceWorker(url, new_tab_url));
+ }
+ 
+-bool IsURLAllowedForSupervisedUser(const GURL& url, Profile& profile) {
++[[maybe_unused]] bool IsURLAllowedForSupervisedUser(const GURL& url, Profile& profile) {
+   if (!profile.IsChild()) {
+     return true;
+   }
+--- a/chrome/browser/ssl/https_upgrades_util.cc
++++ b/chrome/browser/ssl/https_upgrades_util.cc
+@@ -92,7 +92,7 @@
+     interstitial_state.enabled_in_balanced_mode = true;
+ 
+     // Determine if Balanced Mode was enabled specifically due to ESB pairing.
+-    bool user_has_modified_settings =
++    [[maybe_unused]] bool user_has_modified_settings =
+         prefs->HasPrefPath(prefs::kHttpsOnlyModeEnabled) ||
+         prefs->HasPrefPath(prefs::kHttpsFirstBalancedMode);
+   }
+--- a/chrome/browser/ui/safety_hub/revoked_permissions_service.cc
++++ b/chrome/browser/ui/safety_hub/revoked_permissions_service.cc
+@@ -165,7 +165,7 @@
+           base::Unretained(this)));
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+-    RevokedPermissionsOSNotificationDisplayManager*
++    [[maybe_unused]] RevokedPermissionsOSNotificationDisplayManager*
+         notification_display_manager =
+             RevokedPermissionsOSNotificationDisplayManagerFactory::
+                 GetForProfile(Profile::FromBrowserContext(browser_context_));
+--- a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
++++ b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
+@@ -96,7 +96,7 @@
+ constexpr size_t kAutofillCrowdsourcingManagerMaxFormCacheSize = 16;
+ constexpr size_t kMaxFieldsPerQueryRequest = 100;
+ 
+-constexpr base::TimeDelta kFetchTimeout(base::Seconds(10));
++[[maybe_unused]] constexpr base::TimeDelta kFetchTimeout(base::Seconds(10));
+ 
+ constexpr net::BackoffEntry::Policy kAutofillBackoffPolicy = {
+     // Number of initial errors (in sequence) to ignore before applying
+@@ -128,7 +128,7 @@
+     "https://content-autofill.9oo91eapis.qjz9zk/";
+ 
+ // Header to get base64 encoded serialized proto from API for safety.
+-constexpr char kGoogEncodeResponseIfExecutable[] =
++[[maybe_unused]] constexpr char kGoogEncodeResponseIfExecutable[] =
+     "X-Goog-Encode-Response-If-Executable";
+ 
+ // The default number of days after which to reset the registry of autofill
+@@ -217,7 +217,7 @@
+   return base::StrCat({"Autofill.", TypeToName(request_type), ".", suffix});
+ }
+ 
+-net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotation(
++[[maybe_unused]] net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotation(
+     CrowdsourcingRequestType request_type) {
+   switch (request_type) {
+     case CrowdsourcingRequestType::kRequestQuery:
+@@ -548,7 +548,7 @@
+ }
+ 
+ // Gets HTTP body payload for API POST request.
+-std::optional<std::string> GetAPIBodyPayload(std::string payload,
++[[maybe_unused]] std::optional<std::string> GetAPIBodyPayload(std::string payload,
+                                              CrowdsourcingRequestType type) {
+   // Don't do anything for payloads not related to Query.
+   if (type != CrowdsourcingRequestType::kRequestQuery) {
+--- a/components/browsing_data/content/browsing_data_model.cc
++++ b/components/browsing_data/content/browsing_data_model.cc
+@@ -471,7 +471,7 @@
+   std::move(loaded_callback).Run();
+ }
+ 
+-void OnInterestGroupsLoaded(
++[[maybe_unused]] void OnInterestGroupsLoaded(
+     BrowsingDataModel* model,
+     base::OnceClosure loaded_callback,
+     std::vector<content::InterestGroupManager::InterestGroupDataKey>
+@@ -484,7 +484,7 @@
+   std::move(loaded_callback).Run();
+ }
+ 
+-void OnAttributionReportingLoaded(
++[[maybe_unused]] void OnAttributionReportingLoaded(
+     BrowsingDataModel* model,
+     base::OnceClosure loaded_callback,
+     std::set<content::AttributionDataModel::DataKey> attribution_reporting) {
+@@ -496,7 +496,7 @@
+   std::move(loaded_callback).Run();
+ }
+ 
+-void OnPrivateAggregationLoaded(
++[[maybe_unused]] void OnPrivateAggregationLoaded(
+     BrowsingDataModel* model,
+     base::OnceClosure loaded_callback,
+     std::set<content::PrivateAggregationDataModel::DataKey>
+--- a/components/safe_browsing/core/browser/realtime/url_lookup_service.cc
++++ b/components/safe_browsing/core/browser/realtime/url_lookup_service.cc
+@@ -38,9 +38,9 @@
+ constexpr int kDefaultRealTimeUrlLookupReferrerLength = 2;
+ 
+ // Probability for sending protego requests for urls on the allowlist
+-const float kProbabilityForSendingSampledRequests = 0.01;
++[[maybe_unused]] const float kProbabilityForSendingSampledRequests = 0.01;
+ 
+-constexpr char kCookieHistogramPrefix[] = "SafeBrowsing.RT.Request.HadCookie";
++[[maybe_unused]] constexpr char kCookieHistogramPrefix[] = "SafeBrowsing.RT.Request.HadCookie";
+ 
+ GURL* GetRealTimeLookupUrlTestOverride() {
+   static base::NoDestructor<GURL> test_override;
+--- a/components/security_interstitials/content/ssl_blocking_page_base.cc
++++ b/components/security_interstitials/content/ssl_blocking_page_base.cc
+@@ -14,7 +14,7 @@
+ #include "ui/base/l10n/l10n_util.h"
+ 
+ namespace {
+-PrefService* GetPrefs(content::WebContents* web_contents) {
++[[maybe_unused]] PrefService* GetPrefs(content::WebContents* web_contents) {
+   return user_prefs::UserPrefs::Get(web_contents->GetBrowserContext());
+ }
+ }  // namespace
+--- a/components/translate/core/browser/translate_ranker_impl.cc
++++ b/components/translate/core/browser/translate_ranker_impl.cc
+@@ -2,6 +2,9 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++// kill-Translate returns early, leaving dead ranker code
++#pragma clang diagnostic ignored "-Wunreachable-code"
++
+ #include "components/translate/core/browser/translate_ranker_impl.h"
+ 
+ #include <cmath>
+--- a/content/browser/attribution_reporting/attribution_suitable_context.cc
++++ b/content/browser/attribution_reporting/attribution_suitable_context.cc
+@@ -34,7 +34,7 @@
+ 
+ using attribution_reporting::SuitableOrigin;
+ 
+-bool UkmSourceIdAllowed(RenderFrameHostImpl* rfh) {
++[[maybe_unused]] bool UkmSourceIdAllowed(RenderFrameHostImpl* rfh) {
+   return rfh->GetLifecycleState() !=
+          RenderFrameHost::LifecycleState::kPrerendering;
+ }
+--- a/content/browser/file_system_access/file_system_access_safe_move_helper.h
++++ b/content/browser/file_system_access/file_system_access_safe_move_helper.h
+@@ -93,7 +93,7 @@
+   download::QuarantineConnectionCallback quarantine_connection_callback_
+       GUARDED_BY_CONTEXT(sequence_checker_);
+ 
+-  bool has_transient_user_activation_ GUARDED_BY_CONTEXT(sequence_checker_) =
++  [[maybe_unused]] bool has_transient_user_activation_ GUARDED_BY_CONTEXT(sequence_checker_) =
+       false;
+ 
+   FileSystemAccessSafeMoveHelperCallback callback_

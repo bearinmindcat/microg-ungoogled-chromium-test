@@ -1,0 +1,26 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
+---
+--- a/chrome/browser/BUILD.gn
++++ b/chrome/browser/BUILD.gn
+@@ -2753,7 +2753,6 @@
+       "//chrome/browser/profiles:misc",
+       "//chrome/browser/profiles:profiles_extra_parts_impl",
+       "//chrome/browser/push_messaging:impl",
+-      "//chrome/browser/safe_browsing",
+       "//chrome/browser/signin:impl",
+       "//chrome/browser/sync",
+       "//chrome/browser/task_manager:impl",
+--- a/chrome/browser/safe_browsing/BUILD.gn
++++ b/chrome/browser/safe_browsing/BUILD.gn
+@@ -107,6 +107,10 @@
+     "//services/preferences/public/cpp",
+   ]
+   }
++  deps = []
++  public = []
++  sources = []
++  allow_circular_includes_from = []
+ 
+ 
+   # Note: is_android is not equivalent to safe_browsing_mode == 2.

@@ -1,0 +1,25 @@
+diff --git a/components/signin/internal/identity_manager/primary_account_manager.cc b/components/signin/internal/identity_manager/primary_account_manager.cc
+--- a/components/signin/internal/identity_manager/primary_account_manager.cc
++++ b/components/signin/internal/identity_manager/primary_account_manager.cc
+@@ -266,6 +266,9 @@
+ 
+ // static
+ void PrimaryAccountManager::RegisterProfilePrefs(PrefRegistrySimple* registry) {
++  // registered by literal path: signin_pref_names.cc is not built here
++  registry->RegisterBooleanPref("signin.allowed", true);
++  registry->RegisterStringPref("google.services.last_username", std::string());
+ }
+ 
+ // static
+diff --git a/components/signin/public/base/signin_prefs.cc b/components/signin/public/base/signin_prefs.cc
+--- a/components/signin/public/base/signin_prefs.cc
++++ b/components/signin/public/base/signin_prefs.cc
+@@ -190,6 +190,8 @@
+ void SigninPrefs::RegisterProfilePrefs(PrefRegistrySimple* registry) {
+   registry->RegisterDictionaryPref(kSigninAccountPrefs);
+   registry->RegisterIntegerPref(kAccountMetricsNextUnassignedId, 0);
++  registry->RegisterIntegerPref("signin.history_sync.successive_decline_count", 0);
++  registry->RegisterInt64Pref("signin.history_sync.last_declined_timestamp", 0);
+ }
+ 
+ void SigninPrefs::MigrateObsoleteSigninPrefs() {
