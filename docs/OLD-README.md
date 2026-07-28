@@ -37,45 +37,37 @@ In descending order of significance (i.e. most important objective first):
 
 * Disable/Remove Android specific functionalities:
    * Contextual search
-   * Home page, off by default
-   * Location, falling back to the system provider
-   * New Tab Page suggested sites
+   * Lite mode
    * Offline indicator
-   * Safe Browsing, compiled out along with its lookups
-   * Terms-of-Service prompt and metrics opt-out
+   * Prefetch
+   * Home page links
    * Unnecessary account permissions
 * Android specific enhancements:
-   * Add flag to always send `save-data` in header
-   * Add flag to clear browsing data on exit
+   * Add `Startpage.com` and `Qwant.com` as search engine options
+   * Add new folder button in bookmark manager
+   * Add back flags to enable deprecated TLS warnings
+   * Add flag to enable update notifications (disabled by default and will only send a single `GET` request to my server periodically)
+   * Add flags to always send `save-data` flag in header
+   * Add flags to force tablet UI and desktop mode
    * Add flag to disable WebRTC. This flag is enabled by default.
-   * Rename the package to `org.ungoogled.chromium`, so it can be installed alongside Chrome
 * Borrowed from Bromite:
    * Always incognito mode
-   * Disable DRM media preprovisioning which leaks connections
-   * Disable updater pings
-   * DNS-over-https where the network supports it
-   * Restore the flag to disable the pull-to-refresh effect
-   * WebGL flag
-* Borrowed from Cromite:
    * Bookmark import/export options
    * Clear open tabs between sessions
+   * Disable DRM media preprovisioning which leaks connections
+   * DNS-over-https by default
    * Exit menu item
-   * Force tablet UI
    * Proxy configuration
+   * WebGL flag
 * Borrowed from Vanadium:
-   * Ask before playing protected media
-   * Disable article suggestions, background sync and sensor access
-   * Disable autofill server communication
-   * Disable media router and media remoting
-   * Disable metrics
-   * Disable seed-based field trials, variations fetching and WebView variations
-   * Disable showing popular sites
-   * Disable the first run welcome page
-   * Disable using Play services fonts
-   * Enable split cache and strict site isolation
-   * Various compiling time enhancements
-* All Google play and Google service related blobs are removed. This includes Firebase, GCM (Google Cloud Messaging), GMS (Google Mobile Services) and bridge to Google Play.
-* Releases are built for `arm` and `arm64`, plus an `.aab` for `arm64`. There is no `x86` or `x64` build.
+  * Disable seed-based field trials
+  * Disable media router
+  * Disable metrics
+  * Enable user-agent freeze
+  * Enable split cache, partitioning connections, strict site isolation
+  * Various compiling time enhancements
+* All Google play and Google service related blobs are removed. This includes Firebase, GCM (Google Cloud Messaging), GMS (Google Mobile Services) and bridge to Google Play. 
+* Releases are built for `arm`, `arm64` and `x86`. There is no `x86_64` build.
 
 ## Limitations
 
@@ -84,19 +76,22 @@ The enhancements included in ungoogled-chromium **are not to be considered usefu
 ## Platforms and Versions
 
 Pre-built apks are named as `{BUILD_TARGET}_{CPU_ARCH}.apk`, where:
-* `{BUILD_TARGET}` is `ChromePublic` (previously `ChromeModernPublic` from previous maintainer wchen342), for API >= 29 (Android 10), browser only.
-* `{CPU_ARCH}` is one of `arm` (armeabi-v7a), `arm64` (arm64-v8a).
-* Previous maintainer also built `Trichrome`, `SystemWebView`, `x86` for releases. My builds are currently done local rather than automating through github; if there's enough people requesting further builds I can spend the time to set this up.
-* The [ungoogled-chromium wiki](https://ungoogled-software.github.io/ungoogled-chromium-wiki/), [Cromite documentation](https://github.com/uazo/cromite/tree/master/docs), [Vanadium](https://github.com/GrapheneOS/Vanadium) and the [Bromite wiki](https://github.com/bromite/bromite/wiki) can also be helpful.
+* `{BUILD_TARGET}` is one of `ChromeModernPublic`, `Trichrome`, `SystemWebview`.
+  * `ChromeModernPublic` is for API >= 21 (Android 5.0) and only contains the browser.
+  * `Trichrome` is for API >= 29 (Android 10) and only contains the browser. *Note: `Trichrome` has two apks, you need to install both for ungoogled-chromium to work.*
+  * `SystemWebview` is for >= API 21 (Android 5.0) and only contains the webview.
+* `{CPU_ARCH}` is one of `x86`, `arm` (armeabi-v7a), `arm64` (arm64-v8a).
+* Please also read this [important note](https://chromium.googlesource.com/chromium/src/+/HEAD/android_webview/docs/build-instructions.md#Important-notes-for-N_P) about Webview on Android N-P.
+* The [Bromite Wiki](https://github.com/bromite/bromite/wiki/Installing-SystemWebView) can also be helpful.
 
 ## Building Instructions
-*This build uses the SDK/NDK/JDK from the gclient checkout. [Android rebuilds](https://github.com/wchen342/android-rebuilds), used by earlier versions, is no longer maintained.*
+*This build is built using [Android rebuilds](https://github.com/wchen342/android-rebuilds) instead of SDK/NDK binaries from Google.*
 
 * Clone this repository
 * Make sure you have enough disk space and memory to build chromium
 * enter repo directory and run `./build.sh`.
 
-Build time dependencies (*package names as in Debian. Other distributions may have different package names*):
+Build time dependencies (*package names as in Fedora 33. Other distributions may have different package names*):
 
 <details>
   <summary>required packages</summary>
@@ -106,41 +101,54 @@ Build time dependencies (*package names as in Debian. Other distributions may ha
       bzip2
       clang
       curl
-      default-jdk
+      dbus-devel
+      expat-devel
+      fakeroot-libs.i686
       flex
       git
+      glib2
+      glib2-devel
+      glibc.i686
+      glibc-devel.i686
       gnupg2
       gperf
-      lib32gcc-s1
-      lib32stdc++6
-      libc6-dev-i386
-      libc6-i386
-      libdbus-1-dev
-      libdrm-dev
-      libexpat1-dev
-      libglib2.0-dev
-      libkrb5-dev
-      libnss3-dev
-      libxkbcommon-dev
+      java-1.8.0-openjdk-devel
+      java-1.8.0-openjdk-headless
+      java-11-openjdk
+      java-11-openjdk-devel
+      java-11-openjdk-headless
+      krb5-devel
+      libatomic-static
+      libdrm-devel
+      libgcc.i686
+      libstdc++-static
+      libtool-ltdl.i686
+      libtool-ltdl-devel.i686
+      libuuid-devel
+      libxkbcommon-devel
       lld
       llvm
       make
+      maven
       ninja-build
       nodejs
       npm
+      nss-devel
+      passwd
       patch
       perl
+      protobuf
+      python2.7
       python3
       rsync
       tar
       unzip
-      uuid-dev
-      wget
       yasm
+      wget
   ```
 </details>
 
-For a more customized building process, see building instructions from [the original repo](https://github.com/ungoogled-software/ungoogled-chromium/blob/master/docs/building.md) or [Cromite](https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md).
+For a more customized building process, see building instructions from [the original repo](https://github.com/ungoogled-software/ungoogled-chromium/blob/master/docs/building.md).
 
 ## Reporting and Contributing
 
@@ -153,25 +161,18 @@ For a more customized building process, see building instructions from [the orig
 
 The extension patches can be found at [chromium-android-extension](https://github.com/wchen342/chromium-android-extension). Anyone interested is welcomed to fork and keeps working on it.
 
-*Re-supporting extensions is being worked on, since many Android browsers now carry extension support.*
-
 ## Credits
 
 * [The Chromium Project](https://www.chromium.org/)
 * [ungoogled-chromium](https://github.com/ungoogled-software/ungoogled-chromium)
 * [xsmile's fork](https://github.com/xsmile/ungoogled-chromium/tree/android)
 * [Bromite](https://github.com/bromite/bromite)
-* [Cromite](https://github.com/uazo/cromite)
-* [Vanadium](https://github.com/GrapheneOS/Vanadium)
-* [Unobtainium](https://gitlab.com/thermatk/Unobtainium)
 * [Kiwi Browser](https://github.com/kiwibrowser)
 * [dvalter's patches](https://github.com/dvalter/chromium-android-ext-dev)
 
 ## Related Projects
 
-* [Cromite](https://github.com/uazo/cromite) (Bromite successor)
-* [Vanadium](https://github.com/GrapheneOS/Vanadium) (Browser for GrapheneOS)
-* [Bromite](https://github.com/bromite/bromite) (Discontinued Android build)
+* [Bromite](https://github.com/bromite/bromite) (Another build for Android. Has some own features.)
 
 ## License
 
