@@ -1,22 +1,21 @@
-From bee4c1ab1ac2d6b09bbcad4972b01d3f7a3db540 Mon Sep 17 00:00:00 2001
-From: Daniel Micay <danielmicay@gmail.com>
-Date: Thu, 22 Dec 2016 07:15:34 -0500
-Subject: [PATCH 04/78] enable -fwrapv in Clang for non-UBSan builds
+From: bearinmindcat <bearinmindcat@gmail.com>
+Date: Tue, 22 Jul 2026 00:00:00 +0000
+Subject: [PATCH] enable -fwrapv in Clang for non-UBSan builds
 
+Vanadium hardening: defined signed-integer-overflow (-fwrapv). Re-placed for
+Chromium 150 (config("compiler"), after the arm64 stack-clash block; the
+original v99 location drifted into config("linker") where cflags is undefined).
 ---
- build/config/compiler/BUILD.gn |    4 ++++
- 1 file changed, 4 insertions(+)
-
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -350,6 +350,10 @@ config("compiler") {
-       }
+@@ -473,6 +473,10 @@
+     if (current_cpu == "arm64") {
+       cflags += [ "-fstack-clash-protection" ]
      }
- 
++
 +    if (is_clang && !is_ubsan && !is_ubsan_security) {
 +      cflags += [ "-fwrapv" ]
 +    }
-+
-     # Linker warnings.
-     if (fatal_linker_warnings && !is_apple && current_os != "aix" &&
-         current_os != "zos") {
+   }
+ 
+   # Non-Apple Posix and Fuchsia compiler flags setup.
