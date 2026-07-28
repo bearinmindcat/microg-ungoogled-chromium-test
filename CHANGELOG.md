@@ -1,3 +1,8 @@
+# 150.0.7871.114-1
+* Upstream update (v99.0.4844.51-1 to v150.0.7871.114)
+* Refreshed patches from bromite, cromite (bromite successor), & vanadium; doing my best to mirror the previous maintainers philosophy and patch structure
+* Fixed patches from cromite to work with newer chromium versions
+
 # 99.0.4844.51-1
 * Add clear data on exit flag
 * Add flag to disable WebRTC until a UI can be implemented (See [discussion](https://github.com/ungoogled-software/ungoogled-chromium-android/discussions/116)). This flag is enabled by default
