@@ -3,54 +3,32 @@ Date: Sun, 14 Apr 2019 12:08:27 +0200
 Subject: Remove all sync and account permissions/features from manifest
 
 ---
- chrome/android/java/AndroidManifest.xml                                           |    8 --------
- chrome/android/java/src/org/chromium/chrome/browser/sync/AndroidSyncSettings.java |    2 +-
- 2 files changed, 1 insertion(+), 9 deletions(-)
+ chrome/android/java/AndroidManifest.xml |    5 -----
+ 1 file changed, 5 deletions(-)
 
 --- a/chrome/android/java/AndroidManifest.xml
 +++ b/chrome/android/java/AndroidManifest.xml
-@@ -67,24 +67,18 @@ by a child template that "extends" this
-     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
-     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+@@ -84,8 +84,6 @@ by a child template that "extends" this
+     <uses-permission android:name="android.permission.RUN_USER_INITIATED_JOBS" />
+
 -    <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
      <uses-permission android:name="android.permission.INTERNET"/>
 -    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS"/>
      <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
      <uses-permission android:name="android.permission.NFC"/>
-     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
--    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS"/>
--    <uses-permission android:name="android.permission.READ_SYNC_STATS"/>
-     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+@@ -103,7 +101,6 @@ by a child template that "extends" this
+       resizeTo, moveBy}|).
+     -->
+     <uses-permission android:name="android.permission.REPOSITION_SELF_WINDOWS"/>
 -    <uses-permission android:name="android.permission.USE_CREDENTIALS"/>
      <uses-permission-sdk-23 android:name="android.permission.USE_BIOMETRIC"/>
      <uses-permission-sdk-23 android:name="android.permission.USE_FINGERPRINT"/>
      <uses-permission android:name="android.permission.VIBRATE"/>
-     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
--    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
-     {% set enable_vr = enable_vr|default(0) %}
-     {% if enable_vr == "true" %}
-     <!-- Indicates use of Android's VR-mode, available only on Android N+. -->
-@@ -119,8 +113,6 @@ by a child template that "extends" this
-     <uses-permission android:name="com.chrome.permission.DEVICE_EXTRAS" />
+@@ -162,6 +159,4 @@ by a child template that "extends" this
      <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT"/>
- 
+
 -    <uses-permission android:name="com.google.android.apps.now.CURRENT_ACCOUNT_ACCESS" />
 -
-     {% block extra_uses_permissions %}
-     {% endblock %}
- 
---- a/chrome/android/java/src/org/chromium/chrome/browser/sync/AndroidSyncSettings.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/sync/AndroidSyncSettings.java
-@@ -251,7 +251,7 @@ public class AndroidSyncSettings {
-             mIsSyncable = false;
-             mChromeSyncEnabled = false;
-         }
--        mMasterSyncEnabled = mSyncContentResolverDelegate.getMasterSyncAutomatically();
-+        mMasterSyncEnabled = false;
- 
-         if (mAccount != null && SyncService.get() != null && mMasterSyncEnabled
-                 && !mShouldDecoupleSyncFromMasterSync) {
+     <!-- Permission for using pinned windowing layer for document picture-in-picture. -->
+     <uses-permission android:name="android.permission.USE_PINNED_WINDOWING_LAYER" />

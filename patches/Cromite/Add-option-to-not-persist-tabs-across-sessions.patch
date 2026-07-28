@@ -1,0 +1,141 @@
+From: csagan5 <32685696+csagan5@users.noreply.github.com>
+Date: Sat, 7 Sep 2019 15:07:42 +0200
+Subject: Add option to not persist tabs across sessions
+
+---
+ .../android/java/res/xml/privacy_preferences.xml  |  5 +++++
+ .../chrome/browser/ChromeTabbedActivity.java      |  5 ++++-
+ .../browser/privacy/settings/PrivacySettings.java | 15 ++++++++++++++-
+ .../browser/tab_group_sync/StartupHelper.java     |  6 ++++++
+ .../ui/android/strings/android_chrome_strings.grd |  6 ++++++
+ 5 files changed, 35 insertions(+), 2 deletions(-)
+
+diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/android/java/res/xml/privacy_preferences.xml
+--- a/chrome/android/java/res/xml/privacy_preferences.xml
++++ b/chrome/android/java/res/xml/privacy_preferences.xml
+@@ -42,6 +42,11 @@ found in the LICENSE file.
+         android:title="@string/settings_incognito_tab_lock_title"
+         android:summary="@string/settings_incognito_tab_lock_summary_android_setting_off"
+         android:persistent="false" />
++    <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++        android:key="close_tabs_on_exit"
++        android:title="@string/close_tabs_on_exit_title"
++        android:summary="@string/close_tabs_on_exit_summary"
++        android:defaultValue="false" />
+
+     <PreferenceCategory
+         android:key="security_section"
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+@@ -58,6 +58,7 @@ import org.chromium.base.ApplicationStatus;
+ import org.chromium.base.Callback;
+ import org.chromium.base.CallbackController;
+ import org.chromium.base.CallbackUtils;
++import org.chromium.base.ContextUtils;
+ import org.chromium.base.CommandLine;
+ import org.chromium.base.DeviceInfo;
+ import org.chromium.base.IntentUtils;
+@@ -2309,8 +2310,10 @@ public class ChromeTabbedActivity extends ChromeActivity implements PreAttachInt
+                         ActivityRestoreState.NUM_ENTRIES);
+             }
+ 
++            String PREF_CLOSE_TABS_ON_EXIT = "close_tabs_on_exit";
+             boolean noRestoreState =
+-                    CommandLine.getInstance().hasSwitch(ChromeSwitches.NO_RESTORE_STATE);
++                CommandLine.getInstance().hasSwitch(ChromeSwitches.NO_RESTORE_STATE) ||
++                ContextUtils.getAppSharedPreferences().getBoolean(PREF_CLOSE_TABS_ON_EXIT, false);
+             boolean shouldShowNtpAsHomeSurfaceAtStartup = false;
+             final AtomicBoolean isActiveUrlNtp = new AtomicBoolean(false);
+             if (noRestoreState) {
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
+@@ -10,6 +10,7 @@ import static org.chromium.ui.R.drawable.gshield_colorful;
+ 
+ import android.content.Context;
+ import android.content.Intent;
++import android.content.SharedPreferences;
+ import android.graphics.drawable.Drawable;
+ import android.os.Bundle;
+ import android.text.SpannableString;
+@@ -25,6 +26,7 @@ import androidx.preference.Preference;
+ 
+ import org.chromium.base.ApiCompatibilityUtils;
+ import org.chromium.base.Callback;
++import org.chromium.base.ContextUtils;
+ import org.chromium.base.IntentUtils;
+ import org.chromium.base.metrics.RecordHistogram;
+ import org.chromium.base.metrics.RecordUserAction;
+@@ -104,6 +104,7 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+     private static final String PREF_JAVASCRIPT_OPTIMIZER = "javascript_optimizer";
+     @VisibleForTesting static final String PREF_DO_NOT_TRACK = "do_not_track";
+     @VisibleForTesting static final String PREF_THIRD_PARTY_COOKIES = "third_party_cookies";
++    private static final String PREF_CLOSE_TABS_ON_EXIT = "close_tabs_on_exit";
+     private static final String PREF_ADVANCED_PROTECTION_INFO = "advanced_protection_info";
+     private static final int SECURE_CONNECTIONS_MESSAGE_ID =
+             R.string.settings_privacy_and_security_advanced_protection_secure_connections_bullet;
+@@ -418,7 +422,11 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+     @Override
+     public boolean onPreferenceChange(Preference preference, Object newValue) {
+         String key = preference.getKey();
+-        if (PREF_CAN_MAKE_PAYMENT.equals(key)) {
++        if (PREF_CLOSE_TABS_ON_EXIT.equals(key)) {
++            SharedPreferences.Editor sharedPreferencesEditor = ContextUtils.getAppSharedPreferences().edit();
++            sharedPreferencesEditor.putBoolean(PREF_CLOSE_TABS_ON_EXIT, (boolean)newValue);
++            sharedPreferencesEditor.apply();
++        } else if (PREF_CAN_MAKE_PAYMENT.equals(key)) {
+             UserPrefs.get(getProfile())
+                     .setBoolean(Pref.CAN_MAKE_PAYMENT_ENABLED, (boolean) newValue);
+         } else if (PREF_HTTPS_FIRST_MODE_LEGACY.equals(key)) {
+@@ -478,6 +486,10 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+                             getContext(), getProfile()));
+         }
+
++        ChromeSwitchPreference closeTabsOnExitPref =
++                (ChromeSwitchPreference) findPreference(PREF_CLOSE_TABS_ON_EXIT);
++        closeTabsOnExitPref.setOnPreferenceChangeListener(this);
++
+         Preference secureDnsPref = findPreference(PREF_SECURE_DNS);
+         if (secureDnsPref != null && secureDnsPref.isVisible()) {
+             secureDnsPref.setSummary(SecureDnsSettings.getSummary(getContext()));
+diff --git a/chrome/browser/tab_group_sync/android/java/src/org/chromium/chrome/browser/tab_group_sync/StartupHelper.java b/chrome/browser/tab_group_sync/android/java/src/org/chromium/chrome/browser/tab_group_sync/StartupHelper.java
+--- a/chrome/browser/tab_group_sync/android/java/src/org/chromium/chrome/browser/tab_group_sync/StartupHelper.java
++++ b/chrome/browser/tab_group_sync/android/java/src/org/chromium/chrome/browser/tab_group_sync/StartupHelper.java
+@@ -4,6 +4,7 @@
+ 
+ package org.chromium.chrome.browser.tab_group_sync;
+ 
++import org.chromium.base.ContextUtils;
+ import org.chromium.base.metrics.RecordHistogram;
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.chrome.browser.preferences.Pref;
+@@ -74,6 +75,11 @@ public class StartupHelper {
+      */
+     public void initializeTabGroupSync() {
+         LogUtils.log(TAG, "initializeTabGroupSync");
++        if (ContextUtils.getAppSharedPreferences().getBoolean("close_tabs_on_exit", false)) {
++            for (String tabGroupId : mTabGroupSyncService.getAllGroupIds()) {
++                mTabGroupSyncService.removeGroup(tabGroupId);
++            }
++        }
+         // First close the groups that were deleted remotely when the activity was not running.
+         closeDeletedGroupsFromTabModel();
+ 
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -3021,6 +3021,12 @@ To change this setting, <ph name="BEGIN_LINK">BEGIN_LINK</ph>delete the Chrome d
+       <message name="IDS_ACCESSIBILITY_TAB_SWITCHER_TITLE" desc="Accessibility label of the current window when Grid Tab Switcher is shown.">
+         All tabs
+       </message>
++      <message name="IDS_CLOSE_TABS_ON_EXIT_TITLE" desc="Text for 'Close tabs on exit' settings-privacy option.">
++        Close all open tabs on exit
++      </message>
++      <message name="IDS_CLOSE_TABS_ON_EXIT_SUMMARY" desc="Summary text for 'Close tabs on exit' settings-privacy option.">
++        Don't persist tabs between browsing sessions. Caution: parameters in urls allow linking between different sessions.
++      </message>
+       <message name="IDS_TAB_LOADING_DEFAULT_TITLE" desc="The title of a tab when we are still waiting for either the URL or the real title. This generally shows when the page is first loading.">
+         Loading…
+       </message>
+--

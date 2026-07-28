@@ -4,61 +4,54 @@ Subject: Revert "flags: remove disable-pull-to-refresh-effect"
 
 This reverts commit 4e598f38a0e6dd3dbede009c6a99b2a520a94e1f.
 ---
- chrome/browser/about_flags.cc       |    4 ++++
- chrome/browser/flag-metadata.json   |    5 +++++
- chrome/browser/flag_descriptions.cc |    4 ++++
- chrome/browser/flag_descriptions.h  |    3 +++
- 4 files changed, 16 insertions(+)
+ chrome/browser/about_flags.cc      | 4 ++++
+ chrome/browser/flag-metadata.json  | 5 +++++
+ chrome/browser/flag_descriptions.h | 5 +++++
 
+diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
+index 44d58ab..bc9a05e 100644
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -3425,6 +3425,10 @@ const FeatureEntry kFeatureEntries[] = {
-      flag_descriptions::kEnableVulkanDescription,
-      kOsWin | kOsLinux | kOsAndroid, FEATURE_VALUE_TYPE(features::kVulkan)},
+@@ -5342,6 +5342,10 @@ const FeatureEntry kFeatureEntries[] = {
+      FEATURE_VALUE_TYPE(ash::features::kOngoingProcesses)},
+ #endif  // BUILDFLAG(IS_CHROMEOS)
  #if BUILDFLAG(IS_ANDROID)
 +    {switches::kDisablePullToRefreshEffect,
 +     flag_descriptions::kDisablePullToRefreshEffectName,
 +     flag_descriptions::kDisablePullToRefreshEffectDescription, kOsAndroid,
 +     SINGLE_DISABLE_VALUE_TYPE(switches::kDisablePullToRefreshEffect)},
-     {"translate-force-trigger-on-english",
-      flag_descriptions::kTranslateForceTriggerOnEnglishName,
-      flag_descriptions::kTranslateForceTriggerOnEnglishDescription, kOsAndroid,
+     {"reader-mode-blur-transition-animation",
+      flag_descriptions::kReaderModeBlurTransitionAnimationName,
+      flag_descriptions::kReaderModeBlurTransitionAnimationDescription,
+diff --git a/chrome/browser/flag-metadata.json b/chrome/browser/flag-metadata.json
+index f5fcf87..37383ba 100644
 --- a/chrome/browser/flag-metadata.json
 +++ b/chrome/browser/flag-metadata.json
-@@ -1230,6 +1230,11 @@
-     "expiry_milestone": -1
+@@ -2533,6 +2533,11 @@
+       "alexmos@9oo91e.qjz9zk", "creis@9oo91e.qjz9zk", "lbrady@9oo91e.qjz9zk" ],
+     "expiry_milestone": 170
    },
-   {
++  {
 +    "name": "disable-pull-to-refresh-effect",
 +    // "owners": [ "your-team" ],
 +    "expiry_milestone": -1
 +  },
-+  {
-     "name": "disable-keepalive-fetch",
-     "owners": [ "yhirano" ],
-     "expiry_milestone": 83
---- a/chrome/browser/flag_descriptions.cc
-+++ b/chrome/browser/flag_descriptions.cc
-@@ -3333,6 +3333,10 @@ const char kReadLaterDescription[] =
-     "Allow users to save tabs for later. Enables a new button and menu for "
-     "accessing tabs saved for later.";
- 
-+const char kDisablePullToRefreshEffectName[] = "The pull-to-refresh effect";
-+const char kDisablePullToRefreshEffectDescription[] =
-+    "Page reloads triggered by vertically overscrolling content.";
-+
- const char kReaderModeHeuristicsName[] = "Reader Mode triggering";
- const char kReaderModeHeuristicsDescription[] =
-     "Determines what pages the Reader Mode infobar is shown on.";
+   {
+     "name": "disable-u18-feedback-desktop",
+     "owners": [ "chrome-signin-team@9oo91e.qjz9zk" ],
+diff --git a/chrome/browser/flag_descriptions.h b/chrome/browser/flag_descriptions.h
+index 02a660b..ce58b68 100644
 --- a/chrome/browser/flag_descriptions.h
 +++ b/chrome/browser/flag_descriptions.h
-@@ -1913,6 +1913,9 @@ extern const char kQueryTilesSegmentatio
- extern const char kQueryTilesSwapTrendingName[];
- extern const char kQueryTilesSwapTrendingDescription[];
+@@ -546,6 +546,11 @@ inline constexpr char kDisableU18FeedbackDesktopName[] =
+ inline constexpr char kDisableU18FeedbackDesktopDescription[] =
+     "Disables the feedback for U18 users on desktop platforms.";
  
-+extern const char kDisablePullToRefreshEffectName[];
-+extern const char kDisablePullToRefreshEffectDescription[];
++inline constexpr char kDisablePullToRefreshEffectName[] =
++    "The pull-to-refresh effect";
++inline constexpr char kDisablePullToRefreshEffectDescription[] =
++    "Page reloads triggered by vertically overscrolling content.";
 +
- extern const char kReaderModeHeuristicsName[];
- extern const char kReaderModeHeuristicsDescription[];
- extern const char kReaderModeHeuristicsMarkup[];
+ inline constexpr char kDropInputEventsWhilePaintHoldingName[] =
+     "Drop input events while paint-holding is active";
+ inline constexpr char kDropInputEventsWhilePaintHoldingDescription[] =
