@@ -5,388 +5,247 @@ Subject: Remove dependency on
  com.google.android.gms.tasks
 
 ---
- chrome/android/BUILD.gn                                                                                                          |    8 
- chrome/android/features/cablev2_authenticator/BUILD.gn                                                                           |    2 
- chrome/android/features/cablev2_authenticator/java/src/org/chromium/chrome/browser/webauth/authenticator/CableAuthenticator.java |    2 
- chrome/android/java/AndroidManifest.xml                                                                                          |    7 
- chrome/android/java/src/org/chromium/chrome/browser/AppHooks.java                                                                |   14 -
- chrome/android/java/src/org/chromium/chrome/browser/PlayServicesVersionInfo.java                                                 |   12 -
- chrome/android/java/src/org/chromium/chrome/browser/gcore/ChromeGoogleApiClientImpl.java                                         |   25 ---
- chrome/android/java/src/org/chromium/chrome/browser/gcore/GoogleApiClientHelper.java                                             |   82 ----------
- chrome/android/java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java                                              |    9 -
- chrome/test/android/BUILD.gn                                                                                                     |    2 
- components/background_task_scheduler/BUILD.gn                                                                                    |    3 
- components/background_task_scheduler/internal/BUILD.gn                                                                           |    6 
- components/externalauth/android/BUILD.gn                                                                                         |    3 
- components/externalauth/android/java/src/org/chromium/components/externalauth/ExternalAuthUtils.java                             |   12 -
- components/externalauth/android/java/src/org/chromium/components/externalauth/UserRecoverableErrorHandler.java                   |    6 
- components/media_router/browser/android/BUILD.gn                                                                                 |    1 
- components/media_router/browser/android/java/src/org/chromium/components/media_router/BrowserMediaRouter.java                    |   18 --
- components/signin/public/android/BUILD.gn                                                                                        |    2 
- components/webauthn/android/BUILD.gn                                                                                             |    1 
- content/public/android/BUILD.gn                                                                                                  |    3 
- content/public/android/java/src/org/chromium/content/browser/sms/SmsProviderGms.java                                             |    7 
- content/test/BUILD.gn                                                                                                            |    3 
- device/BUILD.gn                                                                                                                  |    2 
- remoting/android/client_java_tmpl.gni                                                                                            |    2 
- services/BUILD.gn                                                                                                                |    4 
- services/device/geolocation/BUILD.gn                                                                                             |    2 
- services/shape_detection/BUILD.gn                                                                                                |    2 
- services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionProviderImpl.java                         |   22 --
- third_party/android_deps/BUILD.gn                                                                                                |   48 -----
- third_party/android_deps/local_modifications/preconditions/javatests/BUILD.gn                                                    |    1 
- third_party/android_deps/util/org/chromium/gms/ChromiumPlayServicesAvailability.java                                             |   10 -
- third_party/android_deps/util/org/chromium/gms/shadows/ShadowChromiumPlayServicesAvailability.java                               |    2 
- weblayer/browser/java/BUILD.gn                                                                                                   |    1 
- weblayer/browser/java/org/chromium/weblayer_private/ChildProcessServiceImpl.java                                                 |    2 
- weblayer/shell/android/BUILD.gn                                                                                                  |    1 
- 35 files changed, 18 insertions(+), 309 deletions(-)
+  chrome/android/BUILD.gn                            |   3 -
+  .../chrome/browser/PlayServicesVersionInfo.java    |  11 +-
+  chrome/android/javatests/BUILD.gn                  |   3 -
+  chrome/android/junit/BUILD.gn                      |   3 -
+  chrome/browser/language/android/BUILD.gn           |   1 -
+  chrome/browser/omaha/android/BUILD.gn              |   1 -
+  .../chrome/browser/omaha/UpdateStatusProvider.java |   4 +-
+  chrome/browser/password_manager/android/BUILD.gn   |   5 -
+  chrome/browser/ui/android/app_rating/BUILD.gn      |   3 -
+  chrome/browser/ui/android/omnibox/BUILD.gn         |   2 -
+  chrome/browser/webauthn/android/BUILD.gn           |   1 -
+  chrome/browser/webid/BUILD.gn                      |   3 -
+  chrome/test/android/BUILD.gn                       |   2 -
+  components/externalauth/android/BUILD.gn           |   3 -
+  .../components/externalauth/ExternalAuthUtils.java |  12 +-
+  .../externalauth/UserRecoverableErrorHandler.java  |  12 +-
+  components/media_router/browser/android/BUILD.gn   |   4 -
+  .../media_router/BrowserMediaRouter.java           |  21 +--
+  components/module_installer/android/BUILD.gn       |   2 -
+  .../android/backend/common/BUILD.gn                |   2 -
+  .../one_time_tokens/android/backend/sms/BUILD.gn   |   3 -
+  components/signin/public/android/BUILD.gn          |   1 -
+  components/webauthn/android/BUILD.gn               |   6 -
+  content/public/android/BUILD.gn                    |   3 -
+  .../content/browser/sms/SmsProviderGms.java        |  10 +-
+  content/test/BUILD.gn                              |   3 -
+  device/BUILD.gn                                    |   2 -
+  services/BUILD.gn                                  |   5 -
+  services/device/geolocation/BUILD.gn               |   3 -
+  services/shape_detection/BUILD.gn                  |   2 -
+  .../BarcodeDetectionProviderImpl.java              |  21 +--
+  third_party/android_deps/BUILD.gn                  |   2 -
+  third_party/android_deps/autorolled/BUILD.gn       | 164 ---------------------
+  .../preconditions/javatests/BUILD.gn               |   1 -
+  .../gms/ChromiumPlayServicesAvailability.java      |  12 +-
+  third_party/cardboard/BUILD.gn                     |   2 -
+  36 files changed, 14 insertions(+), 324 deletions(-)
 
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -307,9 +307,6 @@ android_library("chrome_java") {
-     ":chrome_public_apk_template_resources",
+@@ -320,9 +320,6 @@ if (_is_default_toolchain) {
+       ":screenshot_provider_java",
+       ":usage_stats_proto_java",
+       ":xr_java",
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_tasks_java",
+       "//base:content_uri_utils_java",
+       "//base:flagged_apis_java",
+       "//base:process_launcher_java",
+--- a/chrome/android/javatests/BUILD.gn
++++ b/chrome/android/javatests/BUILD.gn
+@@ -50,9 +50,6 @@ android_library("chrome_test_java_helper") {
+   ]
+ 
+   public_deps = [
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_java_test_support_uncommon",
+--- a/chrome/android/junit/BUILD.gn
++++ b/chrome/android/junit/BUILD.gn
+@@ -47,9 +47,6 @@ if (is_android) {
+     ]
+ 
+     public_deps = [
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_tasks_java",
+       "//base:base_java",
+       "//base:base_java_test_support",
+       "//base:base_java_test_support_uncommon",
+--- a/chrome/browser/language/android/BUILD.gn
++++ b/chrome/browser/language/android/BUILD.gn
+@@ -13,7 +13,6 @@ android_library("base_module_java") {
+     "java/src/org/chromium/chrome/browser/language/LanguageSplitInstaller.java",
+   ]
+   deps = [
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//build/android:build_java",
+     "//chrome/browser/preferences:java",
+--- a/chrome/browser/omaha/android/BUILD.gn
++++ b/chrome/browser/omaha/android/BUILD.gn
+@@ -21,7 +21,6 @@ android_library("java") {
+   ]
+   deps = [
      ":update_proto_java",
-     ":usage_stats_proto_java",
+-    "$google_play_services_package:google_play_services_base_java",
+     "//base:base_java",
+     "//base:base_shared_preferences_java",
+     "//base/version_info/android:version_constants_java",
+--- a/chrome/browser/omaha/android/java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java
++++ b/chrome/browser/omaha/android/java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java
+@@ -16,8 +16,6 @@ import android.text.TextUtils;
+ 
+ import androidx.annotation.IntDef;
+ 
+-import com.google.android.gms.common.GooglePlayServicesUtil;
+-
+ import org.chromium.base.ApkInfo;
+ import org.chromium.base.Callback;
+ import org.chromium.base.DeviceInfo;
+@@ -301,7 +299,7 @@ public class UpdateStatusProvider {
+                                 // Disable the version update check for automotive. See b/297925838.
+                                 && !DeviceInfo.isAutomotive()
+                                 && PackageUtils.isPackageInstalled(
+-                                        GooglePlayServicesUtil.GOOGLE_PLAY_STORE_PACKAGE);
++                                        "com.android.vending");
+                 status.updateState =
+                         allowedToUpdate ? UpdateState.UPDATE_AVAILABLE : UpdateState.NONE;
+ 
+--- a/chrome/browser/password_manager/android/BUILD.gn
++++ b/chrome/browser/password_manager/android/BUILD.gn
+@@ -118,8 +118,6 @@ android_library("java") {
+     ":java_resources",
+     ":settings_interface_java",
+     ":utils_java",
 -    "$google_play_services_package:google_play_services_base_java",
 -    "$google_play_services_package:google_play_services_basement_java",
--    "$google_play_services_package:google_play_services_tasks_java",
      "//base:base_java",
-     "//cc:cc_java",
-     "//chrome/android/features/keyboard_accessory:public_java",
-@@ -903,8 +900,6 @@ junit_binary("chrome_junit_tests") {
-     ":chrome_jni_headers",
-     ":chrome_public_android_manifest",
-     ":delegate_public_impl_java",
--    "$google_play_services_package:google_play_services_base_java",
--    "$google_play_services_package:google_play_services_basement_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base:base_junit_test_support",
-@@ -1274,9 +1269,6 @@ android_library("chrome_test_java") {
-     ":chrome_test_util_java",
-     ":chrome_test_util_jni",
-     ":delegate_public_impl_java",
--    "$google_play_services_package:google_play_services_base_java",
--    "$google_play_services_package:google_play_services_basement_java",
--    "$google_play_services_package:google_play_services_tasks_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base/test:test_support_java",
---- a/components/media_router/browser/android/BUILD.gn
-+++ b/components/media_router/browser/android/BUILD.gn
-@@ -11,7 +11,6 @@ android_library("java") {
-   resources_package = "org.chromium.components.media_router"
+     "//build/android:build_java",
+     "//chrome/browser/device_reauth/android:java",
+@@ -225,7 +223,6 @@ android_library("utils_java") {
+ 
    deps = [
      ":java_resources",
 -    "$google_play_services_package:google_play_services_base_java",
      "//base:base_java",
-     "//components/browser_ui/media/android:java",
-     "//content/public/android:content_java",
---- a/chrome/android/java/AndroidManifest.xml
-+++ b/chrome/android/java/AndroidManifest.xml
-@@ -820,13 +820,6 @@ by a child template that "extends" this
-         </activity>
+     "//base:resetters_java",
+     "//base:tasks_java",
+@@ -301,8 +298,6 @@ robolectric_binary("password_manager_junit_tests") {
+     ":test_support_java",
+     ":unified_password_manager_proto_java",
+     ":utils_java",
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "add_username_dialog:junit",
+     "bottom_sheet:junit",
+     "grouped_affiliations:junit",
+--- a/chrome/browser/ui/android/app_rating/BUILD.gn
++++ b/chrome/browser/ui/android/app_rating/BUILD.gn
+@@ -13,8 +13,6 @@ if (enable_chrome_android_internal) {
+     # Skip core_common_java to avoid resource collisions with clank's internal
+     # playcore.
+     deps = [
+-      "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_tasks_java",
+     ]
+   }
  
-         <!-- Activity for dispatching intents to Instant Apps. -->
--        <activity
--            android:name="org.chromium.chrome.browser.instantapps.AuthenticatedProxyActivity"
--            android:exported="false"
--            android:theme="@style/Theme.BrowserUI.NoDisplay"
--            android:noHistory="true"
--            android:excludeFromRecents="true">
--        </activity>
- 
-         <activity
-             android:name="org.chromium.chrome.browser.vr.VrCancelAnimationActivity"
---- a/chrome/android/java/src/org/chromium/chrome/browser/AppHooks.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/AppHooks.java
-@@ -10,9 +10,6 @@ import android.content.pm.PackageManager
- import androidx.annotation.Nullable;
- import androidx.annotation.VisibleForTesting;
- 
--import com.google.android.gms.common.ConnectionResult;
--import com.google.android.gms.common.GoogleApiAvailability;
--
- import org.chromium.base.ContextUtils;
- import org.chromium.base.annotations.CalledByNative;
- import org.chromium.chrome.browser.customtabs.CustomTabsConnection;
-@@ -276,16 +273,7 @@ public abstract class AppHooks {
-      * same as {@link GoogleApiAvailability#isGooglePlayServicesAvailable()}.
-      */
-     public int isGoogleApiAvailableWithMinApkVersion(int minApkVersion) {
--        try {
--            PackageInfo gmsPackageInfo =
--                    ContextUtils.getApplicationContext().getPackageManager().getPackageInfo(
--                            GoogleApiAvailability.GOOGLE_PLAY_SERVICES_PACKAGE, /* flags= */ 0);
--            int apkVersion = gmsPackageInfo.versionCode;
--            if (apkVersion >= minApkVersion) return ConnectionResult.SUCCESS;
--        } catch (PackageManager.NameNotFoundException e) {
--            return ConnectionResult.SERVICE_MISSING;
--        }
--        return ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED;
-+        return 1;  /* SERVICE_MISSING*/
-     }
- 
-     /**
---- a/chrome/android/java/src/org/chromium/chrome/browser/gcore/ChromeGoogleApiClientImpl.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/gcore/ChromeGoogleApiClientImpl.java
-@@ -6,9 +6,6 @@ package org.chromium.chrome.browser.gcor
- 
- import android.content.Context;
- 
--import com.google.android.gms.common.ConnectionResult;
--import com.google.android.gms.common.api.GoogleApiClient;
--
- import org.chromium.base.Log;
- import org.chromium.base.TraceEvent;
- import org.chromium.components.externalauth.ExternalAuthUtils;
-@@ -22,7 +19,6 @@ public class ChromeGoogleApiClientImpl i
-     private static final String TAG = "Icing";
- 
-     private final Context mApplicationContext;
--    private final GoogleApiClient mClient;
-     private final ExternalAuthUtils mExternalAuthUtils;
- 
-     /**
-@@ -32,10 +28,9 @@ public class ChromeGoogleApiClientImpl i
-      * @param requireFirstPartyBuild true if the given client can only be used in a first-party
-      *            build.
-      */
--    public ChromeGoogleApiClientImpl(Context context, GoogleApiClient client,
-+    public ChromeGoogleApiClientImpl(Context context,
-             boolean requireFirstPartyBuild) {
-         mApplicationContext = context.getApplicationContext();
--        mClient = client;
-         mExternalAuthUtils = ExternalAuthUtils.getInstance();
-         if (requireFirstPartyBuild && !mExternalAuthUtils.isChromeGoogleSigned()) {
-             throw new IllegalStateException("GoogleApiClient requires first-party build");
-@@ -44,7 +39,6 @@ public class ChromeGoogleApiClientImpl i
- 
-     @Override
-     public void disconnect() {
--        mClient.disconnect();
-     }
- 
-     @Override
-@@ -60,24 +54,11 @@ public class ChromeGoogleApiClientImpl i
-     @Override
-     public boolean connectWithTimeout(long timeout) {
-         TraceEvent.begin("ChromeGoogleApiClientImpl:connectWithTimeout");
--        try {
--            ConnectionResult result = mClient.blockingConnect(timeout, TimeUnit.MILLISECONDS);
--            if (!result.isSuccess()) {
--                Log.e(TAG, "Connection to GmsCore unsuccessful. Error %d", result.getErrorCode());
--            } else {
--                Log.d(TAG, "Connection to GmsCore successful.");
--            }
--            return result.isSuccess();
--        } finally {
--            TraceEvent.end("ChromeGoogleApiClientImpl:connectWithTimeout");
--        }
-+        TraceEvent.end("ChromeGoogleApiClientImpl:connectWithTimeout");
-+        return false;
-     }
- 
-     public Context getApplicationContext() {
-         return mApplicationContext;
-     }
--
--    public GoogleApiClient getApiClient() {
--        return mClient;
--    }
- }
---- a/chrome/android/java/src/org/chromium/chrome/browser/gcore/GoogleApiClientHelper.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/gcore/GoogleApiClientHelper.java
-@@ -7,11 +7,6 @@ package org.chromium.chrome.browser.gcor
- import android.os.Bundle;
- import android.os.Handler;
- 
--import com.google.android.gms.common.ConnectionResult;
--import com.google.android.gms.common.api.GoogleApiClient;
--import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
--import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
--
- import org.chromium.base.ApplicationStatus;
- import org.chromium.base.ApplicationStatus.ApplicationStateListener;
- import org.chromium.base.Log;
-@@ -67,30 +62,16 @@ import org.chromium.base.ThreadUtils;
-  * }
-  * </pre>
-  */
--public class GoogleApiClientHelper
--        implements OnConnectionFailedListener, ConnectionCallbacks {
-+public class GoogleApiClientHelper {
-     private static final String TAG = "GCore";
- 
-     private int mResolutionAttempts;
-     private boolean mWasConnectedBefore;
-     private final Handler mHandler = new Handler(ThreadUtils.getUiThreadLooper());
--    private final GoogleApiClient mClient;
-     private long mDisconnectionDelayMs;
-     private Runnable mPendingDisconnect;
- 
-     /**
--     * Creates a helper and enrolls it in the various connection management features.
--     * See the class documentation for {@link GoogleApiClientHelper} for more information.
--     *
--     * @param client The client to wrap.
--     */
--    public GoogleApiClientHelper(GoogleApiClient client) {
--        mClient = client;
--        enableConnectionRetrying(true);
--        enableLifecycleManagement(true);
--    }
--
--    /**
-      * Opts in or out of lifecycle management. The client's connection will be closed and reopened
-      * when Chrome goes in and out of background.
-      *
-@@ -116,13 +97,6 @@ public class GoogleApiClientHelper
-      * Enabling or disabling it while it is already enabled or disabled has no effect.
-      */
-     public void enableConnectionRetrying(boolean enabled) {
--        if (enabled) {
--            mClient.registerConnectionCallbacks(this);
--            mClient.registerConnectionFailedListener(this);
--        } else {
--            mClient.unregisterConnectionCallbacks(this);
--            mClient.unregisterConnectionFailedListener(this);
--        }
-     }
- 
-     /**
-@@ -155,21 +129,11 @@ public class GoogleApiClientHelper
-         // Cancel and reschedule the disconnection if we are in the background. We do it early to
-         // avoid race conditions between a disconnect on the UI thread and the connect below.
-         if (!ApplicationStatus.hasVisibleActivities()) scheduleDisconnection();
--
--        // The client might be disconnected if we were idle in the background for too long.
--        if (!mClient.isConnected() && !mClient.isConnecting()) {
--            Log.d(TAG, "Reconnecting the client.");
--            mClient.connect();
--        }
-     }
- 
-     void restoreConnectedState() {
-         // If we go back to the foreground before a delayed disconnect happens, cancel it.
-         cancelPendingDisconnection();
--
--        if (mWasConnectedBefore) {
--            mClient.connect();
--        }
-     }
- 
-     /**
-@@ -192,12 +156,6 @@ public class GoogleApiClientHelper
-     }
- 
-     private void disconnect() {
--        if (mClient.isConnected() || mClient.isConnecting()) {
--            mWasConnectedBefore = true;
--        }
--
--        // We always call disconnect to abort possibly pending connection requests.
--        mClient.disconnect();
-     }
- 
-     private void cancelPendingDisconnection() {
-@@ -207,43 +165,7 @@ public class GoogleApiClientHelper
-         mPendingDisconnect = null;
-     }
- 
--    @Override
--    public void onConnectionFailed(ConnectionResult result) {
--        if (!isErrorRecoverableByRetrying(result.getErrorCode())) {
--            Log.d(TAG, "Not retrying managed client connection. Unrecoverable error: %d",
--                    result.getErrorCode());
--            return;
--        }
--
--        if (mResolutionAttempts < ConnectedTask.RETRY_NUMBER_LIMIT) {
--            Log.d(TAG, "Retrying managed client connection. attempt %d/%d - errorCode: %d",
--                    mResolutionAttempts, ConnectedTask.RETRY_NUMBER_LIMIT, result.getErrorCode());
--            mResolutionAttempts += 1;
--
--            mHandler.postDelayed(new Runnable() {
--                @Override
--                public void run() {
--                    mClient.connect();
--                }
--            }, ConnectedTask.CONNECTION_RETRY_TIME_MS);
--        }
--    }
--
--    @Override
--    public void onConnected(Bundle connectionHint) {
--        mResolutionAttempts = 0;
--    }
--
--    @Override
--    public void onConnectionSuspended(int cause) {
--        // GoogleApiClient handles retrying on suspension itself. Logging in case it didn't succeed
--        // for some reason.
--        Log.w(TAG, "Managed client connection suspended. Cause: %d", cause);
--    }
--
-     private static boolean isErrorRecoverableByRetrying(int errorCode) {
--        return errorCode == ConnectionResult.INTERNAL_ERROR
--                || errorCode == ConnectionResult.NETWORK_ERROR
--                || errorCode == ConnectionResult.SERVICE_UPDATING;
-+        return false;
-     }
- }
---- a/chrome/android/java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java
-@@ -17,7 +17,6 @@ import androidx.annotation.IntDef;
- import androidx.annotation.NonNull;
- import androidx.annotation.Nullable;
- 
--import com.google.android.gms.common.GooglePlayServicesUtil;
- 
- import org.chromium.base.BuildInfo;
- import org.chromium.base.Callback;
-@@ -328,13 +327,7 @@ public class UpdateStatusProvider {
-         }
- 
-         private boolean isGooglePlayStoreAvailable(Context context) {
--            try {
--                context.getPackageManager().getPackageInfo(
--                        GooglePlayServicesUtil.GOOGLE_PLAY_STORE_PACKAGE, 0);
--            } catch (PackageManager.NameNotFoundException e) {
--                return false;
--            }
--            return true;
-+            return false;
-         }
- 
-         private long getSize(StatFs statFs) {
---- a/chrome/test/android/BUILD.gn
-+++ b/chrome/test/android/BUILD.gn
-@@ -306,8 +306,6 @@ android_library("chrome_java_test_suppor
-   ]
+@@ -53,7 +51,6 @@ android_library("impl_java") {
+   proguard_configs = [ "proguard.flags" ]
+   deps = [
+     ":java",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//build/android:build_java",
+     "//third_party/androidx:androidx_annotation_annotation_java",
+--- a/chrome/browser/ui/android/omnibox/BUILD.gn
++++ b/chrome/browser/ui/android/omnibox/BUILD.gn
+@@ -210,7 +210,6 @@ android_library("java") {
  
    deps = [
+     ":java_resources",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:supplier_java",
+     "//base/version_info/android:version_constants_java",
+@@ -588,7 +587,6 @@ robolectric_library("junit") {
+   deps = [
+     ":java",
+     ":java_resources",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_junit_test_support",
+--- a/chrome/browser/webauthn/android/BUILD.gn
++++ b/chrome/browser/webauthn/android/BUILD.gn
+@@ -16,7 +16,6 @@ android_library("java") {
+ 
+   deps = [
+     ":java_resources",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//build/android:build_java",
+     "//chrome/android:chrome_app_java_resources",
+--- a/chrome/browser/webid/BUILD.gn
++++ b/chrome/browser/webid/BUILD.gn
+@@ -16,8 +16,6 @@ if (is_android) {
+       "android/java/src/org/chromium/chrome/browser/webid/TestIdP.java",
+     ]
+     deps = [
+-      "$google_play_services_package:google_play_services_identity_credentials_java",
+-      "$google_play_services_package:google_play_services_tasks_java",
+       "//base:base_java",
+       "//base:service_loader_java",
+       "//content/public/android:content_java",
+@@ -49,7 +47,6 @@ if (is_android) {
+ 
+     deps = [
+       ":java",
+-      "$google_play_services_package:google_play_services_identity_credentials_java",
+       "//base:base_junit_test_support",
+       "//base:promise_java",
+       "//content/public/android:content_java",
+--- a/chrome/test/android/BUILD.gn
++++ b/chrome/test/android/BUILD.gn
+@@ -401,8 +401,6 @@ android_library("chrome_java_integration_test_support") {
+ 
+   deps = [
+     ":chrome_java_test_support_common",
 -    "$google_play_services_package:google_play_services_base_java",
 -    "$google_play_services_package:google_play_services_basement_java",
      "//base:base_java",
      "//base:base_java_test_support",
-     "//chrome/android:base_module_java",
---- a/components/background_task_scheduler/BUILD.gn
-+++ b/components/background_task_scheduler/BUILD.gn
-@@ -121,9 +121,6 @@ if (is_android) {
+     "//base:holder_java",
+--- a/components/externalauth/android/BUILD.gn
++++ b/components/externalauth/android/BUILD.gn
+@@ -6,8 +6,6 @@ import("//build/config/android/rules.gni")
  
-     deps = [
-       ":background_task_scheduler_task_ids_java",
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
--      "$google_play_services_package:google_play_services_tasks_java",
-       "internal:internal_java",
-       "internal:proto_java",
-       "//base:base_java",
+ android_library("java") {
+   deps = [
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//base:service_loader_java",
+     "//components/embedder_support/android:util_java",
+@@ -25,7 +23,6 @@ android_library("java") {
+ robolectric_library("junit") {
+   deps = [
+     ":java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_junit_test_support",
 --- a/components/externalauth/android/java/src/org/chromium/components/externalauth/ExternalAuthUtils.java
 +++ b/components/externalauth/android/java/src/org/chromium/components/externalauth/ExternalAuthUtils.java
-@@ -15,9 +15,6 @@ import android.text.TextUtils;
+@@ -17,9 +17,6 @@ import android.text.TextUtils;
  import androidx.annotation.VisibleForTesting;
  import androidx.annotation.WorkerThread;
  
@@ -395,8 +254,8 @@ Subject: Remove dependency on
 -
  import org.chromium.base.ContextUtils;
  import org.chromium.base.Log;
- import org.chromium.base.StrictModeContext;
-@@ -170,9 +167,7 @@ public class ExternalAuthUtils {
+ import org.chromium.base.ResettersForTesting;
+@@ -176,9 +173,7 @@ public class ExternalAuthUtils {
       *         when it is updating.
       */
      public boolean isGooglePlayServicesMissing(final Context context) {
@@ -407,7 +266,7 @@ Subject: Remove dependency on
      }
  
      /**
-@@ -189,7 +184,6 @@ public class ExternalAuthUtils {
+@@ -195,7 +190,6 @@ public class ExternalAuthUtils {
      public boolean canUseGooglePlayServices(final UserRecoverableErrorHandler errorHandler) {
          Context context = ContextUtils.getApplicationContext();
          final int resultCode = checkGooglePlayServicesAvailable(context);
@@ -415,7 +274,7 @@ Subject: Remove dependency on
          // resultCode is some kind of error.
          Log.v(TAG, "Unable to use Google Play Services: %s", describeError(resultCode));
          if (isUserRecoverableError(resultCode)) {
-@@ -274,7 +268,7 @@ public class ExternalAuthUtils {
+@@ -276,7 +270,7 @@ public class ExternalAuthUtils {
       * @return true If the code represents a user-recoverable error
       */
      protected boolean isUserRecoverableError(final int errorCode) {
@@ -424,7 +283,7 @@ Subject: Remove dependency on
      }
  
      /**
-@@ -284,7 +278,7 @@ public class ExternalAuthUtils {
+@@ -286,7 +280,7 @@ public class ExternalAuthUtils {
       * @return a textual description of the error code
       */
      protected String describeError(final int errorCode) {
@@ -433,259 +292,90 @@ Subject: Remove dependency on
      }
  
      /**
---- a/content/public/android/BUILD.gn
-+++ b/content/public/android/BUILD.gn
-@@ -136,9 +136,6 @@ android_library("content_main_dex_java")
- android_library("content_full_java") {
-   deps = [
-     ":content_main_dex_java",
--    "$google_play_services_package:google_play_services_base_java",
--    "$google_play_services_package:google_play_services_basement_java",
--    "$google_play_services_package:google_play_services_tasks_java",
-     "//base:base_java",
-     "//build:chromeos_buildflags",
-     "//components/download/public/common:public_java",
---- a/content/test/BUILD.gn
-+++ b/content/test/BUILD.gn
-@@ -2922,9 +2922,6 @@ if (is_android) {
-     testonly = true
-     sources = content_java_sources_needing_jni
-     deps = [
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
--      "$google_play_services_package:google_play_services_tasks_java",
-       "//base:base_java",
-       "//content/public/android:content_java",
-       "//ui/android:ui_full_java",
---- a/device/BUILD.gn
-+++ b/device/BUILD.gn
-@@ -451,8 +451,6 @@ if (is_android) {
-       "gamepad/android/junit/src/org/chromium/device/gamepad/GamepadMappingsTest.java",
-     ]
-     deps = [
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
-       "//base:base_java",
-       "//base:base_java_test_support",
-       "//base:base_junit_test_support",
---- a/remoting/android/client_java_tmpl.gni
-+++ b/remoting/android/client_java_tmpl.gni
-@@ -104,8 +104,6 @@ template("remoting_android_client_java_t
- 
-     if (defined(invoker.play_services_package)) {
-       deps += [
--        "${invoker.play_services_package}:google_play_services_base_java",
--        "${invoker.play_services_package}:google_play_services_basement_java",
-       ]
-     }
- 
---- a/services/BUILD.gn
-+++ b/services/BUILD.gn
-@@ -114,8 +114,6 @@ if (is_android) {
-       "shape_detection/android/junit/src/org/chromium/shape_detection/BitmapUtilsTest.java",
-     ]
-     deps = [
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
-       "//base:base_java",
-       "//base:base_java_test_support",
-       "//base:base_junit_test_support",
-@@ -144,8 +142,6 @@ if (is_android) {
-       "shape_detection/android/javatests/src/org/chromium/shape_detection/TextDetectionImplTest.java",
-     ]
-     deps = [
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
-       "//base:base_java",
-       "//base:base_java_test_support",
-       "//mojo/public/java:base_java",
---- a/services/device/geolocation/BUILD.gn
-+++ b/services/device/geolocation/BUILD.gn
-@@ -163,8 +163,6 @@ if (is_android) {
- 
-     deps = [
-       ":geolocation_jni_headers",
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
-       "//base:base_java",
-       "//components/location/android:location_java",
-       "//services/device/public/java:geolocation_java",
---- a/services/shape_detection/BUILD.gn
-+++ b/services/shape_detection/BUILD.gn
-@@ -115,8 +115,6 @@ if (is_android) {
-     ]
- 
-     deps = [
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
-       "//base:base_java",
-       "//mojo/public/java:base_java",
-       "//mojo/public/java:bindings_java",
---- a/components/background_task_scheduler/internal/BUILD.gn
-+++ b/components/background_task_scheduler/internal/BUILD.gn
-@@ -27,9 +27,6 @@ if (is_android) {
- 
-     deps = [
-       ":proto_java",
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
--      "$google_play_services_package:google_play_services_tasks_java",
-       "//base:base_java",
-       "//components/background_task_scheduler:background_task_scheduler_task_ids_java",
-       "//components/background_task_scheduler:public_java",
-@@ -97,9 +94,6 @@ if (is_android) {
- 
-     deps = [
-       ":internal_java",
--      "$google_play_services_package:google_play_services_base_java",
--      "$google_play_services_package:google_play_services_basement_java",
--      "$google_play_services_package:google_play_services_tasks_java",
-       "//base:base_java",
-       "//base:base_java_test_support",
-       "//components/background_task_scheduler:background_task_scheduler_task_ids_java",
---- a/chrome/android/features/cablev2_authenticator/BUILD.gn
-+++ b/chrome/android/features/cablev2_authenticator/BUILD.gn
-@@ -16,8 +16,6 @@ android_library("java") {
-   deps = [
-     ":java_resources",
-     ":logging_java",
--    "$google_play_services_package:google_play_services_base_java",
--    "$google_play_services_package:google_play_services_tasks_java",
-     "//base:base_java",
-     "//chrome/browser/webauthn/android:java_resources",
-     "//content/public/android:content_java",
---- a/chrome/android/features/cablev2_authenticator/java/src/org/chromium/chrome/browser/webauth/authenticator/CableAuthenticator.java
-+++ b/chrome/android/features/cablev2_authenticator/java/src/org/chromium/chrome/browser/webauth/authenticator/CableAuthenticator.java
-@@ -15,8 +15,6 @@ import android.os.Build;
- import android.os.Bundle;
- import android.provider.Settings;
- 
--import com.google.android.gms.tasks.Task;
--
- import org.chromium.base.Log;
- import org.chromium.base.annotations.CalledByNative;
- import org.chromium.base.annotations.NativeMethods;
---- a/third_party/android_deps/BUILD.gn
-+++ b/third_party/android_deps/BUILD.gn
-@@ -93,7 +93,6 @@ if (!limit_android_deps) {
- 
-   android_library("chromium_play_services_availability_java") {
-     sources = [ "util/org/chromium/gms/ChromiumPlayServicesAvailability.java" ]
--    deps = [ "$google_play_services_package:google_play_services_base_java" ]
-   }
- 
-   android_library("chromium_play_services_availability_shadows_java") {
-@@ -1031,53 +1030,6 @@ if (!limit_android_deps) {
-   }
- 
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_base_java") {
--    aar_path = "libs/com_google_android_gms_play_services_base/play-services-base-17.5.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_base/com_google_android_gms_play_services_base.info"
--    deps = [
--      ":google_play_services_basement_java",
--      ":google_play_services_tasks_java",
--      "//third_party/androidx:androidx_collection_collection_java",
--      "//third_party/androidx:androidx_core_core_java",
--      "//third_party/androidx:androidx_fragment_fragment_java",
--    ]
--    bytecode_rewriter_target =
--        "//build/android/bytecode:fragment_activity_replacer"
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_basement_java") {
--    aar_path = "libs/com_google_android_gms_play_services_basement/play-services-basement-17.5.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_basement/com_google_android_gms_play_services_basement.info"
--    deps = [
--      "//third_party/androidx:androidx_collection_collection_java",
--      "//third_party/androidx:androidx_core_core_java",
--      "//third_party/androidx:androidx_fragment_fragment_java",
--    ]
--
--    jar_excluded_patterns = []
--    if (!enable_java_asserts) {
--      # Omit the file since we use our own copy.
--      jar_excluded_patterns +=
--          [ "com/google/android/gms/common/internal/Preconditions.class" ]
--      deps += [ "//third_party/android_deps/local_modifications/preconditions:gms_stub_preconditions_java" ]
--    }
--
--    # https://crbug.com/989505
--    jar_excluded_patterns += [ "META-INF/proguard/*" ]
--    input_jars_paths = [ "$android_sdk/optional/org.apache.http.legacy.jar" ]
--    bytecode_rewriter_target =
--        "//build/android/bytecode:fragment_activity_replacer"
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_tasks_java") {
--    aar_path = "libs/com_google_android_gms_play_services_tasks/play-services-tasks-17.2.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_tasks/com_google_android_gms_play_services_tasks.info"
--    deps = [ ":google_play_services_basement_java" ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("com_google_android_material_material_java") {
-     aar_path =
-         "libs/com_google_android_material_material/material-1.6.0-alpha01.aar"
---- a/chrome/android/java/src/org/chromium/chrome/browser/PlayServicesVersionInfo.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/PlayServicesVersionInfo.java
-@@ -7,8 +7,6 @@ package org.chromium.chrome.browser;
+--- a/components/externalauth/android/java/src/org/chromium/components/externalauth/UserRecoverableErrorHandler.java
++++ b/components/externalauth/android/java/src/org/chromium/components/externalauth/UserRecoverableErrorHandler.java
+@@ -9,8 +9,6 @@ import android.app.Dialog;
  import android.content.Context;
- import android.content.pm.PackageManager;
+ import android.content.DialogInterface;
  
 -import com.google.android.gms.common.GoogleApiAvailability;
 -
- import org.chromium.base.ContextUtils;
- import org.chromium.base.annotations.CalledByNative;
- import org.chromium.components.externalauth.ExternalAuthUtils;
-@@ -29,7 +27,7 @@ public class PlayServicesVersionInfo {
-     public static String getGmsInfo() {
-         Context context = ContextUtils.getApplicationContext();
- 
--        final long sdkVersion = GoogleApiAvailability.GOOGLE_PLAY_SERVICES_VERSION_CODE;
-+        final long sdkVersion = 12600000;
-         final long installedGmsVersion = getApkVersionNumber(context);
- 
-         final String accessType;
-@@ -53,12 +51,6 @@ public class PlayServicesVersionInfo {
-      *         package is not found.
-      */
-     public static int getApkVersionNumber(Context context) {
--        try {
--            return context.getPackageManager()
--                    .getPackageInfo(GoogleApiAvailability.GOOGLE_PLAY_SERVICES_PACKAGE, 0)
--                    .versionCode;
--        } catch (PackageManager.NameNotFoundException e) {
--            return 0;
--        }
-+        return 0;
+ import org.chromium.base.ThreadUtils;
+ import org.chromium.base.metrics.RecordUserAction;
+ import org.chromium.build.annotations.NullMarked;
+@@ -90,7 +88,6 @@ public abstract class UserRecoverableErrorHandler {
+             if (!sNotificationShown.getAndSet(true)) {
+                 return;
+             }
+-            GoogleApiAvailability.getInstance().showErrorNotification(context, errorCode);
+         }
      }
- }
+ 
+@@ -178,17 +175,10 @@ public abstract class UserRecoverableErrorHandler {
+             }
+             Dialog dialog = mDialog;
+             if (dialog == null) {
+-                dialog =
+-                        GoogleApiAvailability.getInstance()
+-                                .getErrorDialog(mActivity, errorCode, NO_RESPONSE_REQUIRED);
+-                assert dialog != null : "code was " + errorCode;
+-                mDialog = dialog;
+                 mErrorCode = errorCode;
+-
+-                DialogUserActionRecorder.createAndAttachToDialog(dialog);
+             }
+             // This can happen if |errorCode| is ConnectionResult.SERVICE_INVALID.
+-            if (!dialog.isShowing()) {
++            if (dialog != null && !dialog.isShowing()) {
+                 dialog.setCancelable(mCancelable);
+                 dialog.show();
+                 RecordUserAction.record("Signin_Android_GmsUserRecoverableDialogShown");
+--- a/components/media_router/browser/android/BUILD.gn
++++ b/components/media_router/browser/android/BUILD.gn
+@@ -12,8 +12,6 @@ android_library("java") {
+   resources_package = "org.chromium.components.media_router"
+   deps = [
+     ":java_resources",
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//build/android:build_java",
+     "//components/browser_ui/media/android:java",
+@@ -143,8 +141,6 @@ robolectric_library("junit") {
+   deps = [
+     ":java",
+     ":test_support_java",
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_junit_test_support",
 --- a/components/media_router/browser/android/java/src/org/chromium/components/media_router/BrowserMediaRouter.java
 +++ b/components/media_router/browser/android/java/src/org/chromium/components/media_router/BrowserMediaRouter.java
-@@ -10,9 +10,6 @@ import androidx.annotation.Nullable;
+@@ -9,9 +9,6 @@ import static org.chromium.build.NullUtil.assumeNonNull;
  import androidx.annotation.VisibleForTesting;
  import androidx.mediarouter.media.MediaRouter;
  
 -import com.google.android.gms.common.ConnectionResult;
 -import com.google.android.gms.common.GoogleApiAvailability;
 -
- import org.chromium.base.ContextUtils;
- import org.chromium.base.Log;
- import org.chromium.base.StrictModeContext;
-@@ -42,20 +39,7 @@ public class BrowserMediaRouter implemen
+ import org.jni_zero.CalledByNative;
+ import org.jni_zero.JNINamespace;
+ import org.jni_zero.JniType;
+@@ -47,23 +44,7 @@ public class BrowserMediaRouter implements MediaRouteManager {
              new MediaRouteProvider.Factory() {
                  @Override
                  public void addProviders(MediaRouteManager manager) {
 -                    int googleApiAvailabilityResult =
--                            GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
--                                    ContextUtils.getApplicationContext(),
--                                    MIN_GOOGLE_PLAY_SERVICES_APK_VERSION);
+-                            GoogleApiAvailability.getInstance()
+-                                    .isGooglePlayServicesAvailable(
+-                                            ContextUtils.getApplicationContext(),
+-                                            MIN_GOOGLE_PLAY_SERVICES_APK_VERSION);
 -                    if (googleApiAvailabilityResult != ConnectionResult.SUCCESS) {
--                        GoogleApiAvailability.getInstance().showErrorNotification(
--                                ContextUtils.getApplicationContext(), googleApiAvailabilityResult);
+-                        GoogleApiAvailability.getInstance()
+-                                .showErrorNotification(
+-                                        ContextUtils.getApplicationContext(),
+-                                        googleApiAvailabilityResult);
 -                        return;
 -                    }
 -                    MediaRouteProvider cafProvider = CafMediaRouteProvider.create(manager);
@@ -697,6 +387,466 @@ Subject: Remove dependency on
                  }
              };
  
+--- a/components/module_installer/android/BUILD.gn
++++ b/components/module_installer/android/BUILD.gn
+@@ -26,7 +26,6 @@ android_library("module_installer_java") {
+   ]
+ 
+   deps = [
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//components/crash/android:java",
+     "//third_party/android_deps:playcore_java",
+@@ -47,7 +46,6 @@ robolectric_binary("module_installer_junit_tests") {
+   ]
+   deps = [
+     ":module_installer_java",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_junit_test_support",
+--- a/components/one_time_tokens/android/backend/common/BUILD.gn
++++ b/components/one_time_tokens/android/backend/common/BUILD.gn
+@@ -11,7 +11,6 @@ android_library("java") {
+     "java/src/org/chromium/components/one_time_tokens/backend/OneTimeTokensMetricsRecorder.java",
+   ]
+   deps = [
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//build/android:build_java",
+     "//third_party/androidx:androidx_annotation_annotation_java",
+@@ -23,7 +22,6 @@ robolectric_library("junit") {
+   sources = [ "java/src/org/chromium/components/one_time_tokens/backend/OneTimeTokensMetricsRecorderTest.java" ]
+   deps = [
+     ":java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_junit_test_support",
+--- a/components/one_time_tokens/android/backend/sms/BUILD.gn
++++ b/components/one_time_tokens/android/backend/sms/BUILD.gn
+@@ -48,7 +48,6 @@ android_library("java") {
+   ]
+ 
+   deps = [
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//build/android:build_java",
+     "//components/one_time_tokens/android/backend/common:java",
+@@ -73,7 +72,6 @@ robolectric_binary("one_time_tokens_junit_tests") {
+   deps = [
+     ":java",
+     ":sms_otp_fetching_interface_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_junit_test_support",
+@@ -85,7 +83,6 @@ robolectric_binary("one_time_tokens_junit_tests") {
+ 
+ android_library("sms_otp_fetching_interface_java") {
+   deps = [
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java",
+     "//base:service_loader_java",
+   ]
+--- a/components/signin/public/android/BUILD.gn
++++ b/components/signin/public/android/BUILD.gn
+@@ -3,7 +3,6 @@ import("//third_party/jni_zero/jni_zero.gni")
+ 
+ android_library("java") {
+   deps = [
+-    "$google_play_services_package:google_play_services_base_java",
+     "//base:base_java",
+     "//base:service_loader_java",
+     "//build/android:build_java",
+--- a/components/webauthn/android/BUILD.gn
++++ b/components/webauthn/android/BUILD.gn
+@@ -75,10 +75,6 @@ android_library("java") {
+   ]
+ 
+   deps = [
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+-    "$google_play_services_package:google_play_services_identity_credentials_java",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:service_loader_java",
+     "//base/version_info/android:version_constants_java",
+@@ -232,8 +228,6 @@ robolectric_library("junit") {
+   deps = [
+     ":java",
+     ":test_support_java",
+-    "$google_play_services_package:google_play_services_identity_credentials_java",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+     "//base:base_junit_test_support",
+--- a/content/public/android/BUILD.gn
++++ b/content/public/android/BUILD.gn
+@@ -160,9 +160,6 @@ android_library("content_full_java") {
+     ":content_java_resources",
+     ":content_main_dex_java",
+     ":content_util_java",
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+-    "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:flagged_apis_java",
+     "//base:process_launcher_java",
+--- a/content/public/android/java/src/org/chromium/content/browser/sms/SmsProviderGms.java
++++ b/content/public/android/java/src/org/chromium/content/browser/sms/SmsProviderGms.java
+@@ -6,9 +6,6 @@ package org.chromium.content.browser.sms;
+ 
+ import androidx.annotation.VisibleForTesting;
+ 
+-import com.google.android.gms.common.ConnectionResult;
+-import com.google.android.gms.common.GoogleApiAvailability;
+-
+ import org.jni_zero.CalledByNative;
+ import org.jni_zero.JNINamespace;
+ import org.jni_zero.NativeMethods;
+@@ -92,12 +89,7 @@ public class SmsProviderGms {
+     @CalledByNative
+     private static SmsProviderGms create(long smsProviderGmsAndroid, @GmsBackend int backend) {
+         Log.d(TAG, "Creating SmsProviderGms");
+-        boolean isVerificationBackendAvailable =
+-                GoogleApiAvailability.getInstance()
+-                                .isGooglePlayServicesAvailable(
+-                                        ContextUtils.getApplicationContext(),
+-                                        MIN_GMS_VERSION_NUMBER_WITH_CODE_BROWSER_BACKEND)
+-                        == ConnectionResult.SUCCESS;
++        boolean isVerificationBackendAvailable = false;
+         return new SmsProviderGms(smsProviderGmsAndroid, backend, isVerificationBackendAvailable);
+     }
+ 
+--- a/content/test/BUILD.gn
++++ b/content/test/BUILD.gn
+@@ -3919,9 +3919,6 @@ if (is_android) {
+     testonly = true
+     sources = content_java_sources_needing_jni
+     deps = [
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_tasks_java",
+       "//base:base_java",
+       "//content/public/android:content_java",
+       "//third_party/jni_zero:jni_zero_java",
+--- a/device/BUILD.gn
++++ b/device/BUILD.gn
+@@ -530,8 +530,6 @@ if (is_android) {
+       "vr/public/junit/src/org/chromium/device/vr/XrFeatureStatusTest.java",
+     ]
+     deps = [
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+       "//base:base_java",
+       "//base:base_java_test_support",
+       "//base:base_junit_test_support",
+--- a/services/BUILD.gn
++++ b/services/BUILD.gn
+@@ -204,9 +204,6 @@ if (is_android) {
+       "shape_detection/android/junit/src/org/chromium/shape_detection/BitmapUtilsTest.java",
+     ]
+     deps = [
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_tasks_java",
+       "//base:base_java",
+       "//base:base_java_test_support",
+       "//base:base_junit_test_support",
+@@ -246,8 +243,6 @@ if (is_android) {
+       "shape_detection/android/javatests/src/org/chromium/shape_detection/TextDetectionImplTest.java",
+     ]
+     deps = [
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+       "//base:base_java",
+       "//base:base_java_test_support",
+       "//mojo/public/java:base_java",
+--- a/services/device/geolocation/BUILD.gn
++++ b/services/device/geolocation/BUILD.gn
+@@ -161,9 +161,6 @@ if (is_android) {
+ 
+     deps = [
+       ":geolocation_jni_headers",
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_tasks_java",
+       "//base:base_java",
+       "//build/android:build_java",
+       "//components/location/android:location_java",
+--- a/services/shape_detection/BUILD.gn
++++ b/services/shape_detection/BUILD.gn
+@@ -135,8 +135,6 @@ if (is_android) {
+     ]
+ 
+     deps = [
+-      "$google_play_services_package:google_play_services_base_java",
+-      "$google_play_services_package:google_play_services_basement_java",
+       "//base:base_java",
+       "//mojo/public/java:base_java",
+       "//mojo/public/java:bindings_java",
+--- a/services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionProviderImpl.java
++++ b/services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionProviderImpl.java
+@@ -7,8 +7,6 @@ import org.chromium.build.annotations.NullMarked;
+ 
+ import android.content.Context;
+ 
+-import com.google.android.gms.common.GoogleApiAvailability;
+-
+ import org.chromium.base.ContextUtils;
+ import org.chromium.base.Log;
+ import org.chromium.base.PackageUtils;
+@@ -64,22 +62,7 @@ public class BarcodeDetectionProviderImpl implements BarcodeDetectionProvider {
+     public void onConnectionError(MojoException e) {}
+ 
+     public static @Nullable BarcodeDetectionProvider create() {
+-        Context ctx = ContextUtils.getApplicationContext();
+-        if (!ChromiumPlayServicesAvailability.isGooglePlayServicesAvailable(ctx)) {
+-            Log.w(TAG, "Google Play Services not available");
+-            return null;
+-        }
+-        int version =
+-                PackageUtils.getPackageVersion(GoogleApiAvailability.GOOGLE_PLAY_SERVICES_PACKAGE);
+-        if (version < 19742000) {
+-            if (version < 0) {
+-                Log.w(TAG, "Google Play Services not available");
+-            } else {
+-                // https://crbug.com/1020746
+-                Log.w(TAG, "Detection disabled (%d < 19.7.42)", version);
+-            }
+-            return null;
+-        }
+-        return new BarcodeDetectionProviderImpl();
++        Log.w(TAG, "Google Play Services not available");
++        return null;
+     }
+ }
+--- a/third_party/android_deps/BUILD.gn
++++ b/third_party/android_deps/BUILD.gn
+@@ -92,8 +92,6 @@ if (!limit_android_deps) {
+       sources =
+           [ "util/org/chromium/gms/ChromiumPlayServicesAvailability.java" ]
+       deps = [
+-        "$google_play_services_package:google_play_services_base_java",
+-        "$google_play_services_package:google_play_services_basement_java",
+         "//base:resetters_java",
+       ]
+     }
+--- a/third_party/android_deps/autorolled/BUILD.gn
++++ b/third_party/android_deps/autorolled/BUILD.gn
+@@ -72,93 +72,6 @@ template("define_autorolled_targets") {
+       ]
+     }
+ 
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_base_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_base/play-services-base.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_base/com_google_android_gms_play_services_base.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-          "//third_party/androidx:androidx_collection_collection_java",
+-          "//third_party/androidx:androidx_core_core_java",
+-          "//third_party/androidx:androidx_fragment_fragment_java",
+-        ]
+-      }
+-    }
+-
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_basement_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_basement/play-services-basement.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_basement/com_google_android_gms_play_services_basement.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "//third_party/androidx:androidx_collection_collection_java",
+-          "//third_party/androidx:androidx_core_core_java",
+-          "//third_party/androidx:androidx_fragment_fragment_java",
+-        ]
+-
+-        jar_excluded_patterns = []
+-        if (!enable_java_asserts) {
+-          # Omit the file since we use our own copy.
+-          jar_excluded_patterns +=
+-              [ "com/google/android/gms/common/internal/Preconditions.class" ]
+-          deps += [ "//third_party/android_deps/local_modifications/preconditions:gms_stub_preconditions_java" ]
+-        }
+-
+-        # https://crbug.com/989505
+-        jar_excluded_patterns += [ "META-INF/proguard/*" ]
+-      }
+-    }
+-
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_identity_credentials_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_identity_credentials/play-services-identity-credentials.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_identity_credentials/com_google_android_gms_play_services_identity_credentials.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-          "//third_party/kotlin_stdlib:kotlin_stdlib_java",
+-        ]
+-      }
+-    }
+-
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_tasks_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_tasks/play-services-tasks.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_tasks/com_google_android_gms_play_services_tasks.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_basement_java",
+-        ]
+-      }
+-    }
+-
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_time_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_time/play-services-time.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_time/com_google_android_gms_play_services_time.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-        ]
+-      }
+-    }
+-
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     if (!defined(material_design_target)) {
+@@ -351,9 +260,6 @@ template("define_autorolled_targets") {
+       info_path = "autorolled/committed/libs/com_google_mlkit_common/com_google_mlkit_common.info"
+       enable_bytecode_checks = false
+       deps = [
+-        "$google_play_services_package:google_play_services_base_java",
+-        "$google_play_services_package:google_play_services_basement_java",
+-        "$google_play_services_package:google_play_services_tasks_java",
+         "//third_party/androidx:androidx_appcompat_appcompat_java",
+         "//third_party/androidx:androidx_core_core_java",
+       ]
+@@ -367,7 +273,6 @@ template("define_autorolled_targets") {
+       info_path = "autorolled/committed/libs/com_google_mlkit_genai_common/com_google_mlkit_genai_common.info"
+       enable_bytecode_checks = false
+       deps = [
+-        "$google_play_services_package:google_play_services_basement_java",
+         "//third_party/android_deps:org_jetbrains_kotlinx_kotlinx_coroutines_core_java",
+         "//third_party/android_deps:org_jetbrains_kotlinx_kotlinx_coroutines_guava_java",
+         "//third_party/kotlin_stdlib:kotlin_stdlib_java",
+@@ -382,8 +287,6 @@ template("define_autorolled_targets") {
+       info_path = "autorolled/committed/libs/com_google_mlkit_genai_prompt/com_google_mlkit_genai_prompt.info"
+       enable_bytecode_checks = false
+       deps = [
+-        "$google_play_services_package:google_play_services_basement_java",
+-        "$google_play_services_package:google_play_services_tasks_java",
+         "//third_party/android_deps:com_google_mlkit_common_java",
+         "//third_party/android_deps:com_google_mlkit_genai_common_java",
+         "//third_party/android_deps:guava_java",
+@@ -846,50 +749,6 @@ template("define_autorolled_targets") {
+       ]
+     }
+ 
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_cloud_messaging_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_cloud_messaging/play-services-cloud-messaging.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_cloud_messaging/com_google_android_gms_play_services_cloud_messaging.info"
+-        enable_bytecode_checks = false
+-
+-        # To remove visibility constraint, add this dependency to
+-        # //third_party/android_deps/autorolled/build.gradle.template
+-        visibility = [
+-          ":*",
+-          "//third_party/androidx:*",
+-        ]
+-        deps = [
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-        ]
+-      }
+-    }
+-
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_phenotype_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_phenotype/play-services-phenotype.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_phenotype/com_google_android_gms_play_services_phenotype.info"
+-        enable_bytecode_checks = false
+-
+-        # To remove visibility constraint, add this dependency to
+-        # //third_party/android_deps/autorolled/build.gradle.template
+-        visibility = [
+-          ":*",
+-          "//third_party/androidx:*",
+-        ]
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-          "//third_party/androidx:androidx_core_core_java",
+-        ]
+-      }
+-    }
+-
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     android_aar_prebuilt("com_google_android_play_core_common_java") {
+@@ -1487,29 +1346,6 @@ template("define_autorolled_targets") {
+       deps = [ "//third_party/android_deps:org_jetbrains_kotlinx_kotlinx_coroutines_core_jvm_java" ]
+     }
+ 
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    java_prebuilt(
+-        "org_jetbrains_kotlinx_kotlinx_coroutines_play_services_java") {
+-      jar_path = "autorolled/cipd/libs/org_jetbrains_kotlinx_kotlinx_coroutines_play_services/kotlinx-coroutines-play-services.jar"
+-      output_name = "org_jetbrains_kotlinx_kotlinx_coroutines_play_services"
+-      supports_android = true
+-      requires_android = true
+-      enable_bytecode_checks = false
+-
+-      # To remove visibility constraint, add this dependency to
+-      # //third_party/android_deps/autorolled/build.gradle.template
+-      visibility = [
+-        ":*",
+-        "//third_party/androidx:*",
+-      ]
+-      deps = [
+-        "$google_play_services_package:google_play_services_tasks_java",
+-        "//third_party/android_deps:org_jetbrains_kotlinx_kotlinx_coroutines_core_java",
+-        "//third_party/kotlin_stdlib:kotlin_stdlib_java",
+-      ]
+-    }
+-
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     java_group("org_jetbrains_kotlinx_kotlinx_coroutines_test_java") {
+--- a/third_party/android_deps/local_modifications/preconditions/javatests/BUILD.gn
++++ b/third_party/android_deps/local_modifications/preconditions/javatests/BUILD.gn
+@@ -8,7 +8,6 @@ android_library("javatests") {
+   testonly = true
+   sources = [ "org/chromium/preconditions/PreconditionsTest.java" ]
+   deps = [
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//base:base_java_test_support",
+     "//base/test:test_support_java",
+     "//build/android:build_java",
 --- a/third_party/android_deps/util/org/chromium/gms/ChromiumPlayServicesAvailability.java
 +++ b/third_party/android_deps/util/org/chromium/gms/ChromiumPlayServicesAvailability.java
 @@ -5,9 +5,6 @@ package org.chromium.gms;
@@ -706,13 +856,13 @@ Subject: Remove dependency on
 -import com.google.android.gms.common.ConnectionResult;
 -import com.google.android.gms.common.GoogleApiAvailability;
 -
- // Refer to go/doubledown-play-services#new-apis for more detail.
- public final class ChromiumPlayServicesAvailability {
-     /**
-@@ -30,9 +27,7 @@ public final class ChromiumPlayServicesA
-      * PM/UX.
-      */
-     public static boolean isGooglePlayServicesAvailable(final Context context) {
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.Nullable;
+ import org.chromium.base.ResettersForTesting;
+@@ -45,9 +42,7 @@ public final class ChromiumPlayServicesAvailability {
+         if (sIsAvailableForTesting != null) {
+             return sIsAvailableForTesting;
+         }
 -        return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
 -                       context, GMS_VERSION_NUMBER)
 -                == ConnectionResult.SUCCESS;
@@ -720,209 +870,63 @@ Subject: Remove dependency on
      }
  
      /**
-@@ -50,7 +45,6 @@ public final class ChromiumPlayServicesA
-      * PM/UX.
+@@ -66,9 +61,8 @@ public final class ChromiumPlayServicesAvailability {
       */
      public static int getGooglePlayServicesConnectionResult(final Context context) {
+         if (sIsAvailableForTesting != null) {
+-            return sIsAvailableForTesting ? ConnectionResult.SUCCESS : ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED;
++            return sIsAvailableForTesting ? 0 /* SUCCESS */ : 2 /* SERVICE_VERSION_UPDATE_REQUIRED */;
+         }
 -        return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
 -                context, GMS_VERSION_NUMBER);
-+        return 1;  //SERVICE_MISSING
++        return 1; // SERVICE_MISSING
      }
  }
---- a/third_party/android_deps/util/org/chromium/gms/shadows/ShadowChromiumPlayServicesAvailability.java
-+++ b/third_party/android_deps/util/org/chromium/gms/shadows/ShadowChromiumPlayServicesAvailability.java
-@@ -5,8 +5,6 @@ package org.chromium.gms.shadows;
+--- a/third_party/cardboard/BUILD.gn
++++ b/third_party/cardboard/BUILD.gn
+@@ -51,8 +51,6 @@ android_library("cardboard_java") {
+   deps = [
+     ":cardboard_proto_java",
+     ":cardboard_resources",
+-    "$google_play_services_package:google_play_services_base_java",
+-    "$google_play_services_package:google_play_services_basement_java",
+     "//third_party/android_deps:protobuf_lite_runtime_java",
+     "//third_party/androidx:androidx_annotation_annotation_jvm_java",
+     "//third_party/androidx:androidx_appcompat_appcompat_java",
+--- a/chrome/android/java/src/org/chromium/chrome/browser/PlayServicesVersionInfo.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/PlayServicesVersionInfo.java
+@@ -5,12 +5,9 @@
+ package org.chromium.chrome.browser;
  
- import android.content.Context;
  
 -import com.google.android.gms.common.GoogleApiAvailability;
 -
- import org.robolectric.annotation.Implementation;
- import org.robolectric.annotation.Implements;
+ import org.jni_zero.CalledByNative;
+ import org.jni_zero.JniType;
  
---- a/services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionProviderImpl.java
-+++ b/services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionProviderImpl.java
-@@ -8,8 +8,6 @@ import android.content.Context;
- import android.content.pm.PackageInfo;
- import android.content.pm.PackageManager.NameNotFoundException;
+-import org.chromium.base.PackageUtils;
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.components.externalauth.ExternalAuthUtils;
  
--import com.google.android.gms.common.GoogleApiAvailability;
--
- import org.chromium.base.ContextUtils;
- import org.chromium.base.Log;
- import org.chromium.gms.ChromiumPlayServicesAvailability;
-@@ -54,23 +52,7 @@ public class BarcodeDetectionProviderImp
-     public void onConnectionError(MojoException e) {}
+@@ -27,7 +24,7 @@
+      */
+     @CalledByNative
+     public static @JniType("std::string") String getGmsInfo() {
+-        final long sdkVersion = GoogleApiAvailability.GOOGLE_PLAY_SERVICES_VERSION_CODE;
++        final long sdkVersion = 12600000;
+         final long installedGmsVersion = getApkVersionNumber();
  
-     public static BarcodeDetectionProvider create() {
--        Context ctx = ContextUtils.getApplicationContext();
--        if (!ChromiumPlayServicesAvailability.isGooglePlayServicesAvailable(ctx)) {
--            Log.w(TAG, "Google Play Services not available");
--            return null;
+         final String accessType;
+@@ -52,11 +49,6 @@
+      *     package is not found.
+      */
+     public static int getApkVersionNumber() {
+-        int ret =
+-                PackageUtils.getPackageVersion(GoogleApiAvailability.GOOGLE_PLAY_SERVICES_PACKAGE);
+-        if (ret < 0) {
+-            ret = 0;
 -        }
--        try {
--            PackageInfo playServicesPackage = ctx.getPackageManager().getPackageInfo(
--                    GoogleApiAvailability.GOOGLE_PLAY_SERVICES_PACKAGE, 0);
--            if (playServicesPackage.versionCode < 19742000) {
--                // https://crbug.com/1020746
--                Log.w(TAG, "Detection disabled (%s < 19.7.42)", playServicesPackage.versionName);
--                return null;
--            }
--        } catch (NameNotFoundException e) {
--            Log.w(TAG, "Google Play Services not available");
--            return null;
--        }
--        return new BarcodeDetectionProviderImpl();
-+        Log.w(TAG, "Google Play Services not available");
-+        return null;
+-        return ret;
++        return 0;
      }
  }
---- a/components/externalauth/android/java/src/org/chromium/components/externalauth/UserRecoverableErrorHandler.java
-+++ b/components/externalauth/android/java/src/org/chromium/components/externalauth/UserRecoverableErrorHandler.java
-@@ -9,8 +9,6 @@ import android.app.Dialog;
- import android.content.Context;
- import android.content.DialogInterface;
- 
--import com.google.android.gms.common.GoogleApiAvailability;
--
- import org.chromium.base.ThreadUtils;
- import org.chromium.base.metrics.RecordUserAction;
- 
-@@ -89,7 +87,6 @@ public abstract class UserRecoverableErr
-             if (!sNotificationShown.getAndSet(true)) {
-                 return;
-             }
--            GoogleApiAvailability.getInstance().showErrorNotification(context, errorCode);
-         }
-     }
- 
-@@ -182,11 +179,8 @@ public abstract class UserRecoverableErr
-                 cancelDialog();
-             }
-             if (mDialog == null) {
--                mDialog = GoogleApiAvailability.getInstance().getErrorDialog(
--                        mActivity, errorCode, NO_RESPONSE_REQUIRED);
-                 mErrorCode = errorCode;
- 
--                DialogUserActionRecorder.createAndAttachToDialog(mDialog);
-             }
-             // This can happen if |errorCode| is ConnectionResult.SERVICE_INVALID.
-             if (mDialog != null && !mDialog.isShowing()) {
---- a/components/externalauth/android/BUILD.gn
-+++ b/components/externalauth/android/BUILD.gn
-@@ -27,8 +27,6 @@ android_library("google_delegate_public_
- android_library("java") {
-   deps = [
-     ":google_delegate_java",
--    "$google_play_services_package:google_play_services_base_java",
--    "$google_play_services_package:google_play_services_basement_java",
-     "//base:base_java",
-     "//components/embedder_support/android:util_java",
-     "//content/public/android:content_java",
-@@ -49,7 +47,6 @@ android_library("junit") {
- 
-   deps = [
-     ":java",
--    "$google_play_services_package:google_play_services_basement_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base:base_junit_test_support",
---- a/components/signin/public/android/BUILD.gn
-+++ b/components/signin/public/android/BUILD.gn
-@@ -2,7 +2,6 @@ import("//build/config/android/rules.gni
- 
- android_library("java") {
-   deps = [
--    "$google_play_services_package:google_play_services_base_java",
-     "//base:base_java",
-     "//components/externalauth/android:java",
-     "//net/android:net_java",
-@@ -136,7 +135,6 @@ java_library("junit") {
-   deps = [
-     ":java",
-     ":signin_java_test_support",
--    "$google_play_services_package:google_play_services_auth_base_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base:base_junit_test_support",
---- a/weblayer/browser/java/BUILD.gn
-+++ b/weblayer/browser/java/BUILD.gn
-@@ -104,7 +104,6 @@ android_library("base_module_java") {
-   ]
-   deps = [
-     ":base_module_interfaces_java",
--    "$google_play_services_package:google_play_services_basement_java",
-     "//base:base_java",
-     "//components/embedder_support/android:application_java",
-     "//content/public/android:content_java",
---- a/weblayer/shell/android/BUILD.gn
-+++ b/weblayer/shell/android/BUILD.gn
-@@ -42,7 +42,6 @@ android_library("weblayer_shell_java") {
-   # google_play_services_version definition in the manifest.
-   deps = [
-     ":weblayer_shell_resources",
--    "$google_play_services_package:google_play_services_base_java",
-     "//base:base_java",
-     "//components/strictmode/android:java",
-     "//third_party/android_deps:android_support_v4_java",
---- a/content/public/android/java/src/org/chromium/content/browser/sms/SmsProviderGms.java
-+++ b/content/public/android/java/src/org/chromium/content/browser/sms/SmsProviderGms.java
-@@ -6,8 +6,6 @@ package org.chromium.content.browser.sms
- 
- import androidx.annotation.VisibleForTesting;
- 
--import com.google.android.gms.common.ConnectionResult;
--import com.google.android.gms.common.GoogleApiAvailability;
- 
- import org.chromium.base.ContextUtils;
- import org.chromium.base.Log;
-@@ -88,10 +86,7 @@ public class SmsProviderGms {
-     private static SmsProviderGms create(long smsProviderGmsAndroid, @GmsBackend int backend) {
-         Log.d(TAG, "Creating SmsProviderGms");
-         boolean isVerificationBackendAvailable =
--                GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
--                        ContextUtils.getApplicationContext(),
--                        MIN_GMS_VERSION_NUMBER_WITH_CODE_BROWSER_BACKEND)
--                == ConnectionResult.SUCCESS;
-+                false;
-         return new SmsProviderGms(smsProviderGmsAndroid, backend, isVerificationBackendAvailable);
-     }
- 
---- a/weblayer/browser/java/org/chromium/weblayer_private/ChildProcessServiceImpl.java
-+++ b/weblayer/browser/java/org/chromium/weblayer_private/ChildProcessServiceImpl.java
-@@ -11,7 +11,6 @@ import android.os.Build;
- import android.os.IBinder;
- import android.webkit.WebViewFactory;
- 
--import com.google.android.gms.common.GooglePlayServicesUtilLight;
- 
- import org.chromium.base.Log;
- import org.chromium.base.StrictModeContext;
-@@ -46,7 +45,6 @@ public final class ChildProcessServiceIm
- 
-         // The GPU process may use GMS APIs using the host app's context. This is called in the
-         // browser process in GmsBridge.
--        GooglePlayServicesUtilLight.enableUsingApkIndependentContext();
- 
-         return new ChildProcessServiceImpl(service, appContext);
-     }
---- a/components/webauthn/android/BUILD.gn
-+++ b/components/webauthn/android/BUILD.gn
-@@ -27,7 +27,6 @@ android_library("java") {
-   ]
-   annotation_processor_deps = [ "//base/android/jni_generator:jni_processor" ]
-   deps = [
--    "$google_play_services_package:google_play_services_tasks_java",
-     "//base:base_java",
-     "//base:jni_java",
-     "//components/externalauth/android:java",
---- a/third_party/android_deps/local_modifications/preconditions/javatests/BUILD.gn
-+++ b/third_party/android_deps/local_modifications/preconditions/javatests/BUILD.gn
-@@ -8,7 +8,6 @@ android_library("javatests") {
-   testonly = true
-   sources = [ "org/chromium/preconditions/PreconditionsTest.java" ]
-   deps = [
--    "$google_play_services_package:google_play_services_basement_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base/test:test_support_java",

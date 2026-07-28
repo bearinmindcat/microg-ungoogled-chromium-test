@@ -5,286 +5,75 @@ Subject: Remove dependency on com.google.android.gms.gcm
 It also disalbes Snippets, auto-update of offline pages and launching browser from background service.
 The snippets are already disabled in native codes, this will disable it on Java level.
 ---
- chrome/android/BUILD.gn                                                                                   |    3 
- chrome/android/java/src/com/google/ipc/invalidation/ticl/android2/channel/GcmRegistrationTaskService.java |   10 --
- chrome/android/java/src/org/chromium/chrome/browser/ChromeBackgroundServiceImpl.java                      |   44 ---------
- chrome/android/java/src/org/chromium/chrome/browser/base/SplitCompatGcmTaskService.java                   |   35 -------
- components/background_task_scheduler/BUILD.gn                                                             |    1 
- components/background_task_scheduler/internal/BUILD.gn                                                    |    2 
- third_party/android_deps/BUILD.gn                                                                         |   46 ----------
- 7 files changed, 3 insertions(+), 138 deletions(-)
+  chrome/android/BUILD.gn                      |  2 --
+  chrome/android/javatests/BUILD.gn            |  1 -
+  chrome/android/junit/BUILD.gn                |  1 -
+  third_party/android_deps/autorolled/BUILD.gn | 19 -------------------
+  4 files changed, 23 deletions(-)
 
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -313,7 +313,6 @@ android_library("chrome_java") {
-     "$google_play_services_package:google_play_services_cast_framework_java",
-     "$google_play_services_package:google_play_services_cast_java",
-     "$google_play_services_package:google_play_services_fido_java",
--    "$google_play_services_package:google_play_services_gcm_java",
-     "$google_play_services_package:google_play_services_iid_java",
-     "$google_play_services_package:google_play_services_tasks_java",
-     "$google_play_services_package:google_play_services_vision_common_java",
-@@ -1290,7 +1289,6 @@ android_library("chrome_test_java") {
-     "$google_play_services_package:google_play_services_cast_framework_java",
-     "$google_play_services_package:google_play_services_cast_java",
-     "$google_play_services_package:google_play_services_fido_java",
--    "$google_play_services_package:google_play_services_gcm_java",
-     "$google_play_services_package:google_play_services_iid_java",
-     "$google_play_services_package:google_play_services_tasks_java",
-     "//base:base_java",
-@@ -2358,7 +2356,6 @@ android_library("browser_java_test_suppo
-   ]
-   deps = [
-     ":chrome_java",
--    "$google_play_services_package:google_play_services_gcm_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base:jni_java",
---- a/components/background_task_scheduler/BUILD.gn
-+++ b/components/background_task_scheduler/BUILD.gn
-@@ -124,7 +124,6 @@ if (is_android) {
-       "$google_play_services_package:google_play_services_auth_base_java",
-       "$google_play_services_package:google_play_services_base_java",
+@@ -325,7 +325,6 @@ if (_is_default_toolchain) {
        "$google_play_services_package:google_play_services_basement_java",
+       "$google_play_services_package:google_play_services_cast_framework_java",
+       "$google_play_services_package:google_play_services_cast_java",
 -      "$google_play_services_package:google_play_services_gcm_java",
+       "$google_play_services_package:google_play_services_iid_java",
        "$google_play_services_package:google_play_services_tasks_java",
-       "internal:internal_java",
-       "internal:proto_java",
---- a/third_party/android_deps/BUILD.gn
-+++ b/third_party/android_deps/BUILD.gn
-@@ -1152,21 +1152,6 @@ if (!limit_android_deps) {
-   }
- 
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_gcm_java") {
--    aar_path = "libs/com_google_android_gms_play_services_gcm/play-services-gcm-17.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_gcm/com_google_android_gms_play_services_gcm.info"
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_iid_java",
--      ":google_play_services_stats_java",
--      "//third_party/androidx:androidx_collection_collection_java",
--      "//third_party/androidx:androidx_core_core_java",
--      "//third_party/androidx:androidx_legacy_legacy_support_core_utils_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("google_play_services_iid_java") {
-     aar_path = "libs/com_google_android_gms_play_services_iid/play-services-iid-17.0.0.aar"
-     info_path = "libs/com_google_android_gms_play_services_iid/com_google_android_gms_play_services_iid.info"
-@@ -1854,20 +1839,6 @@ if (!limit_android_deps) {
-   }
- 
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_android_datatransport_transport_api_java") {
--    aar_path = "libs/com_google_android_datatransport_transport_api/transport-api-2.2.1.aar"
--    info_path = "libs/com_google_android_datatransport_transport_api/com_google_android_datatransport_transport_api.info"
--
--    # To remove visibility constraint, add this dependency to
--    # //third_party/android_deps/build.gradle.
--    visibility = [
--      ":*",
--      "//third_party/androidx:*",
--    ]
--    deps = [ "//third_party/androidx:androidx_annotation_annotation_java" ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("google_play_services_clearcut_java") {
-     aar_path = "libs/com_google_android_gms_play_services_clearcut/play-services-clearcut-17.0.0.aar"
-     info_path = "libs/com_google_android_gms_play_services_clearcut/com_google_android_gms_play_services_clearcut.info"
-@@ -1887,23 +1858,6 @@ if (!limit_android_deps) {
+       "$google_play_services_package:google_play_services_vision_common_java",
+@@ -2015,7 +2014,6 @@ if (_is_default_toolchain) {
      ]
-   }
- 
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_cloud_messaging_java") {
--    aar_path = "libs/com_google_android_gms_play_services_cloud_messaging/play-services-cloud-messaging-16.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_cloud_messaging/com_google_android_gms_play_services_cloud_messaging.info"
--
--    # To remove visibility constraint, add this dependency to
--    # //third_party/android_deps/build.gradle.
--    visibility = [
--      ":*",
--      "//third_party/androidx:*",
--    ]
--    deps = [
--      ":google_play_services_basement_java",
--      ":google_play_services_tasks_java",
--    ]
--  }
--
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("google_play_services_flags_java") {
-     aar_path = "libs/com_google_android_gms_play_services_flags/play-services-flags-17.0.0.aar"
---- a/components/background_task_scheduler/internal/BUILD.gn
-+++ b/components/background_task_scheduler/internal/BUILD.gn
-@@ -29,7 +29,6 @@ if (is_android) {
-       ":proto_java",
-       "$google_play_services_package:google_play_services_base_java",
-       "$google_play_services_package:google_play_services_basement_java",
+     deps = [
+       ":chrome_java",
 -      "$google_play_services_package:google_play_services_gcm_java",
-       "$google_play_services_package:google_play_services_tasks_java",
        "//base:base_java",
-       "//components/background_task_scheduler:background_task_scheduler_task_ids_java",
-@@ -100,7 +99,6 @@ if (is_android) {
-       ":internal_java",
-       "$google_play_services_package:google_play_services_base_java",
+       "//base:base_java_test_support",
+       "//build/android:build_java",
+--- a/chrome/android/javatests/BUILD.gn
++++ b/chrome/android/javatests/BUILD.gn
+@@ -54,7 +54,6 @@ android_library("chrome_test_java_helper") {
+     "$google_play_services_package:google_play_services_basement_java",
+     "$google_play_services_package:google_play_services_cast_framework_java",
+     "$google_play_services_package:google_play_services_cast_java",
+-    "$google_play_services_package:google_play_services_gcm_java",
+     "$google_play_services_package:google_play_services_iid_java",
+     "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+--- a/chrome/android/junit/BUILD.gn
++++ b/chrome/android/junit/BUILD.gn
+@@ -51,7 +51,6 @@ if (is_android) {
        "$google_play_services_package:google_play_services_basement_java",
+       "$google_play_services_package:google_play_services_cast_framework_java",
+       "$google_play_services_package:google_play_services_cast_java",
 -      "$google_play_services_package:google_play_services_gcm_java",
        "$google_play_services_package:google_play_services_tasks_java",
        "//base:base_java",
        "//base:base_java_test_support",
---- a/chrome/android/java/src/com/google/ipc/invalidation/ticl/android2/channel/GcmRegistrationTaskService.java
-+++ b/chrome/android/java/src/com/google/ipc/invalidation/ticl/android2/channel/GcmRegistrationTaskService.java
-@@ -4,18 +4,10 @@
- 
- package com.google.ipc.invalidation.ticl.android2.channel;
- 
--import com.google.android.gms.gcm.GcmNetworkManager;
--import com.google.android.gms.gcm.GcmTaskService;
--import com.google.android.gms.gcm.TaskParams;
--
- /**
-  * A class with this name was part of the cacheinvalidation library, which isn't used anymore and
-  * has been deleted. However, this service is exported in the AndroidManifest.xml and thus is part
-  * of Chrome's public API, so we need to keep this dummy class around.
-  */
--public class GcmRegistrationTaskService extends GcmTaskService {
--    @Override
--    public int onRunTask(TaskParams params) {
--        return GcmNetworkManager.RESULT_FAILURE;
--    }
-+public class GcmRegistrationTaskService {
- }
---- a/chrome/android/java/src/org/chromium/chrome/browser/base/SplitCompatGcmTaskService.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/base/SplitCompatGcmTaskService.java
-@@ -6,58 +6,25 @@ package org.chromium.chrome.browser.base
- 
- import android.content.Context;
- 
--import com.google.android.gms.gcm.GcmTaskService;
--import com.google.android.gms.gcm.TaskParams;
--
- import org.chromium.base.BundleUtils;
- 
- /**
-  * GcmTaskService base class which will call through to the given {@link Impl}. This class must be
-  * present in the base module, while the Impl can be in the chrome module.
-  */
--public class SplitCompatGcmTaskService extends GcmTaskService {
-+public class SplitCompatGcmTaskService {
-     private String mServiceClassName;
--    private Impl mImpl;
- 
-     public SplitCompatGcmTaskService(String serviceClassName) {
-         mServiceClassName = serviceClassName;
+--- a/third_party/android_deps/autorolled/BUILD.gn
++++ b/third_party/android_deps/autorolled/BUILD.gn
+@@ -251,25 +251,6 @@ template("define_autorolled_targets") {
+       }
      }
  
--    @Override
-     protected void attachBaseContext(Context context) {
-         context = SplitCompatApplication.createChromeContext(context);
--        mImpl = (Impl) BundleUtils.newInstance(context, mServiceClassName);
--        mImpl.setService(this);
--        super.attachBaseContext(context);
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_gcm_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_gcm/play-services-gcm.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_gcm/com_google_android_gms_play_services_gcm.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_iid_java",
+-          "$google_play_services_package:google_play_services_stats_java",
+-          "//third_party/androidx:androidx_collection_collection_java",
+-          "//third_party/androidx:androidx_core_core_java",
+-          "//third_party/androidx:androidx_legacy_legacy_support_core_utils_java",
+-        ]
+-      }
 -    }
 -
--    @Override
--    public int onRunTask(TaskParams params) {
--        return mImpl.onRunTask(params);
--    }
--
--    @Override
--    public void onInitializeTasks() {
--        mImpl.onInitializeTasks();
-     }
- 
-     /**
-      * Holds the implementation of service logic. Will be called by {@link
-      * SplitCompatGcmTaskService}.
-      */
--    public abstract static class Impl {
--        private SplitCompatGcmTaskService mService;
--
--        protected final void setService(SplitCompatGcmTaskService service) {
--            mService = service;
--        }
--
--        protected final GcmTaskService getService() {
--            return mService;
--        }
--
--        public abstract int onRunTask(TaskParams params);
--
--        public void onInitializeTasks() {}
--    }
- }
---- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeBackgroundServiceImpl.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeBackgroundServiceImpl.java
-@@ -8,9 +8,6 @@ import android.content.Context;
- 
- import androidx.annotation.VisibleForTesting;
- 
--import com.google.android.gms.gcm.GcmNetworkManager;
--import com.google.android.gms.gcm.TaskParams;
--
- import org.chromium.base.Log;
- import org.chromium.base.task.PostTask;
- import org.chromium.chrome.browser.background_sync.BackgroundSyncBackgroundTaskScheduler;
-@@ -25,43 +22,9 @@ import org.chromium.content_public.brows
-  * browser needs to be launched for scheduled tasks, or in response to changing network or power
-  * conditions.
-  */
--public class ChromeBackgroundServiceImpl extends ChromeBackgroundService.Impl {
-+public class ChromeBackgroundServiceImpl {
-     private static final String TAG = "BackgroundService";
- 
--    @Override
--    @VisibleForTesting
--    public int onRunTask(final TaskParams params) {
--        final String taskTag = params.getTag();
--        final Context context = getService();
--        PostTask.runOrPostTask(UiThreadTaskTraits.DEFAULT, () -> {
--            switch (taskTag) {
--                case BackgroundSyncBackgroundTaskScheduler.TASK_TAG:
--                    // Background Sync tasks are now scheduled using BackgroundTaskScheduler.
--                    // This should be rare, and we simply reschedule using BackgroundTaskScheduler.
--                    rescheduleOneShotBackgroundSyncTasks();
--                    break;
--
--                case OfflinePageUtils.TASK_TAG:
--                    // Offline pages are migrating to BackgroundTaskScheduler, therefore getting
--                    // a task through ChromeBackgroundService should cause a rescheduling using
--                    // the new component.
--                    rescheduleOfflinePages();
--                    break;
--
--                // This is only for tests.
--                case MinimalBrowserStartupUtils.TASK_TAG:
--                    handleServicificationStartupTask(context, taskTag);
--                    break;
--
--                default:
--                    Log.i(TAG, "Unknown task tag " + taskTag);
--                    break;
--            }
--        });
--
--        return GcmNetworkManager.RESULT_SUCCESS;
--    }
--
-     private void handleServicificationStartupTask(Context context, String tag) {
-         launchBrowser(context, tag);
-     }
-@@ -87,9 +50,4 @@ public class ChromeBackgroundServiceImpl
-                 BackgroundSyncBackgroundTaskScheduler.BackgroundSyncTask
-                         .ONE_SHOT_SYNC_CHROME_WAKE_UP);
-     }
--
--    @Override
--    public void onInitializeTasks() {
--        rescheduleBackgroundSyncTasksOnUpgrade();
--    }
- }
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     if (google_play_services_package == "//third_party/android_deps") {

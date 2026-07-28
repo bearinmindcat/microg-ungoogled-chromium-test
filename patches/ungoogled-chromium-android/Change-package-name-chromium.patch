@@ -2,34 +2,34 @@ description: change package name to allow co-existence with original Chromium
 author: Wengling Chen <feiyu2817@gmail.com>
 
 ---
- chrome/android/BUILD.gn                                            |    4 ++--
+ chrome/android/chrome_public_apk_tmpl.gni                          |    4 ++--
  chrome/android/java/res_chromium_base/values/channel_constants.xml |    2 +-
  2 files changed, 3 insertions(+), 3 deletions(-)
 
---- a/chrome/android/BUILD.gn
-+++ b/chrome/android/BUILD.gn
-@@ -43,7 +43,7 @@ if (android_64bit_target_cpu && skip_sec
-   assert(current_toolchain != android_secondary_abi_toolchain)
+--- a/chrome/android/chrome_public_apk_tmpl.gni
++++ b/chrome/android/chrome_public_apk_tmpl.gni
+@@ -25,7 +25,7 @@ declare_args() {
+   # Android package name to use when compiling the public chrome targets
+   # (chrome_public_apk, trichrome_chrome_bundle, etc. as well as the
+   # *_bundle variants). This defaults to the Chromium browser package name.
+-  chrome_public_manifest_package = "org.chromium.chrome"
++  chrome_public_manifest_package = "org.ungoogled.chromium"
+   if (use_stable_package_name_for_trichrome) {
+     chrome_public_manifest_package += ".stable"
+   } else if (android_channel != "default") {
+@@ -33,7 +33,7 @@ declare_args() {
+   }
  }
- 
--_default_package = "org.chromium.chrome"
-+_default_package = "org.ungoogled.chromium"
- if (android_channel != "default") {
-   # android-binary-size trybot may checks if an internal Chrome variant's
-   # AndroidManifest is as expected by ensuring the differences between its
-@@ -64,7 +64,7 @@ declare_args() {
-   # for details.
-   chrome_public_manifest_package = _default_package
- }
+
 -chrome_public_test_manifest_package = "org.chromium.chrome.tests"
 +chrome_public_test_manifest_package = "org.ungoogled.chromium.tests"
- 
- chrome_public_jinja_variables =
-     default_chrome_public_jinja_variables +
+
+ default_chrome_public_jinja_variables = [
+   "channel=$android_channel",
 --- a/chrome/android/java/res_chromium_base/values/channel_constants.xml
 +++ b/chrome/android/java/res_chromium_base/values/channel_constants.xml
-@@ -5,7 +5,7 @@
- 
+@@ -7,7 +7,7 @@
+
  <resources xmlns:android="http://schemas.android.com/apk/res/android">
      <!-- The application name displayed to the user. -->
 -    <string name="app_name" translatable="false">Chromium</string>

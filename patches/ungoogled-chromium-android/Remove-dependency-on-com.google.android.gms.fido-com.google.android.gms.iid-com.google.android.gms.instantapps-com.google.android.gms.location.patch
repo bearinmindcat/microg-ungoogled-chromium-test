@@ -5,202 +5,203 @@ Subject: Remove dependency on com.google.android.gms.fido,
  com.google.android.gms.location
 
 ---
- base/android/java/src/org/chromium/base/IntentUtils.java                                                                                        |    5 
- chrome/android/BUILD.gn                                                                                                                         |    5 
- chrome/android/features/cablev2_authenticator/BUILD.gn                                                                                          |    1 
- chrome/android/features/cablev2_authenticator/java/src/org/chromium/chrome/browser/webauth/authenticator/CableAuthenticator.java                |  245 --------
- chrome/android/java/src/org/chromium/chrome/browser/externalnav/ExternalNavigationDelegateImpl.java                                             |    6 
- chrome/android/java/src/org/chromium/chrome/browser/instantapps/InstantAppsHandler.java                                                         |   51 -
- components/gcm_driver/instance_id/android/BUILD.gn                                                                                              |    2 
- components/gcm_driver/instance_id/android/java/src/org/chromium/components/gcm_driver/instance_id/InstanceIDWithSubtype.java                    |   26 
- components/webauthn/android/BUILD.gn                                                                                                            |    1 
- components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java                                               |  112 ---
- components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2Helper.java                                                          |  298 ----------
- device/BUILD.gn                                                                                                                                 |    1 
- services/BUILD.gn                                                                                                                               |    1 
- services/device/geolocation/BUILD.gn                                                                                                            |    1 
- services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderGmsCore.java                                       |  105 ---
- third_party/android_deps/BUILD.gn                                                                                                               |   48 -
- third_party/libaddressinput/src/android/src/main/java/com/android/i18n/addressinput/autocomplete/gmscore/AddressAutocompleteApiImpl.java        |   65 --
- third_party/libaddressinput/src/android/src/main/java/com/android/i18n/addressinput/autocomplete/gmscore/AddressAutocompletePredictionImpl.java |   12 
- 18 files changed, 27 insertions(+), 958 deletions(-)
+  chrome/android/BUILD.gn                            |   1 -
+  chrome/android/javatests/BUILD.gn                  |   1 -
+  chrome/browser/ui/android/omnibox/BUILD.gn         |   2 -
+  .../browser/omnibox/geo/GeolocationHeader.java     |  54 +------
+  components/gcm_driver/instance_id/android/BUILD.gn |   2 -
+  .../instance_id/InstanceIDWithSubtype.java         |  36 +----
+  components/omnibox/common/BUILD.gn                 |   1 -
+  .../components/omnibox/OmniboxFeatures.java        |   4 +-
+  device/BUILD.gn                                    |   1 -
+  services/BUILD.gn                                  |   1 -
+  services/device/geolocation/BUILD.gn               |   1 -
+  .../geolocation/LocationProviderGmsCore.java       | 161 +--------------------
+  third_party/android_deps/autorolled/BUILD.gn       |  68 ---------
+  13 files changed, 11 insertions(+), 322 deletions(-)
 
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -309,8 +309,6 @@ android_library("chrome_java") {
-     ":usage_stats_proto_java",
+@@ -322,7 +322,6 @@ if (_is_default_toolchain) {
+       ":xr_java",
+       "$google_play_services_package:google_play_services_base_java",
+       "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_iid_java",
+       "$google_play_services_package:google_play_services_tasks_java",
+       "$google_play_services_package:google_play_services_vision_common_java",
+       "$google_play_services_package:google_play_services_vision_java",
+--- a/chrome/android/javatests/BUILD.gn
++++ b/chrome/android/javatests/BUILD.gn
+@@ -52,7 +52,6 @@ android_library("chrome_test_java_helper") {
+   public_deps = [
      "$google_play_services_package:google_play_services_base_java",
      "$google_play_services_package:google_play_services_basement_java",
--    "$google_play_services_package:google_play_services_fido_java",
--    "$google_play_services_package:google_play_services_iid_java",
-     "$google_play_services_package:google_play_services_tasks_java",
-     "$google_play_services_package:google_play_services_vision_common_java",
-     "$google_play_services_package:google_play_services_vision_java",
-@@ -909,7 +907,6 @@ junit_binary("chrome_junit_tests") {
-     ":delegate_public_impl_java",
-     "$google_play_services_package:google_play_services_base_java",
-     "$google_play_services_package:google_play_services_basement_java",
--    "$google_play_services_package:google_play_services_fido_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base:base_junit_test_support",
-@@ -1281,8 +1278,6 @@ android_library("chrome_test_java") {
-     ":delegate_public_impl_java",
-     "$google_play_services_package:google_play_services_base_java",
-     "$google_play_services_package:google_play_services_basement_java",
--    "$google_play_services_package:google_play_services_fido_java",
 -    "$google_play_services_package:google_play_services_iid_java",
      "$google_play_services_package:google_play_services_tasks_java",
      "//base:base_java",
      "//base:base_java_test_support",
---- a/chrome/android/java/src/org/chromium/chrome/browser/instantapps/InstantAppsHandler.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/instantapps/InstantAppsHandler.java
-@@ -41,31 +41,6 @@ public class InstantAppsHandler {
-     // TODO(mariakhomenko): Use system once we roll to O SDK.
-     private static final int FLAG_DO_NOT_LAUNCH = 0x00000200;
+--- a/chrome/browser/ui/android/omnibox/BUILD.gn
++++ b/chrome/browser/ui/android/omnibox/BUILD.gn
+@@ -210,7 +210,6 @@ android_library("java") {
  
--    // TODO(mariakhomenko): Depend directly on the constants once we roll to v8 libraries.
--    private static final String DO_NOT_LAUNCH_EXTRA =
--            "com.google.android.gms.instantapps.DO_NOT_LAUNCH_INSTANT_APP";
--
--    protected static final String IS_REFERRER_TRUSTED_EXTRA =
--            "com.google.android.gms.instantapps.IS_REFERRER_TRUSTED";
--
--    protected static final String IS_USER_CONFIRMED_LAUNCH_EXTRA =
--            "com.google.android.gms.instantapps.IS_USER_CONFIRMED_LAUNCH";
--
--    protected static final String TRUSTED_REFERRER_PKG_EXTRA =
--            "com.google.android.gms.instantapps.TRUSTED_REFERRER_PKG";
--
--    public static final String IS_GOOGLE_SEARCH_REFERRER =
--            "com.google.android.gms.instantapps.IS_GOOGLE_SEARCH_REFERRER";
--
--    private static final String BROWSER_LAUNCH_REASON =
--            "com.google.android.gms.instantapps.BROWSER_LAUNCH_REASON";
--
--    private static final String SUPERVISOR_PKG = "com.google.android.instantapps.supervisor";
--
--    private static final String[] SUPERVISOR_START_ACTIONS = {
--            "com.google.android.instantapps.START", "com.google.android.instantapps.nmr1.INSTALL",
--            "com.google.android.instantapps.nmr1.VIEW"};
--
-     // Only two possible call sources for fallback intents, set boundary at n+1.
-     private static final int SOURCE_BOUNDARY = 3;
+   deps = [
+     ":java_resources",
+-    "$google_play_services_package:google_play_services_location_java",
+     "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:supplier_java",
+@@ -589,7 +588,6 @@ robolectric_library("junit") {
+   deps = [
+     ":java",
+     ":java_resources",
+-    "$google_play_services_package:google_play_services_location_java",
+     "$google_play_services_package:google_play_services_tasks_java",
+     "//base:base_java",
+     "//base:base_java_test_support",
+--- a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/geo/GeolocationHeader.java
++++ b/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/geo/GeolocationHeader.java
+@@ -13,12 +13,6 @@ import android.util.Base64;
+ import androidx.annotation.IntDef;
+ import androidx.annotation.VisibleForTesting;
  
-@@ -85,14 +60,6 @@ public class InstantAppsHandler {
-      * @return Whether the given intent is going to open an Instant App.
+-import com.google.android.gms.location.FusedLocationProviderClient;
+-import com.google.android.gms.location.Granularity;
+-import com.google.android.gms.location.LocationListener;
+-import com.google.android.gms.location.LocationRequest;
+-import com.google.android.gms.location.LocationServices;
+-
+ import org.jni_zero.CalledByNative;
+ 
+ import org.chromium.base.ApiCompatibilityUtils;
+@@ -96,7 +90,6 @@ public class GeolocationHeader {
+ 
+     private static final String DUMMY_URL_QUERY = "some_query";
+ 
+-    private static final LocationListener sLocationListener = GeolocationHeader::onLocationUpdate;
+     private static boolean sGeolocationPrimed;
+     private static boolean sCurrentLocationRequested;
+ 
+@@ -150,44 +143,7 @@ public class GeolocationHeader {
+      * granularity matching the app's permission level.
       */
-     public static boolean isIntentToInstantApp(Intent intent) {
--        if (SUPERVISOR_PKG.equals(intent.getPackage())) return true;
+     private static boolean startListeningForLocationUpdates(boolean requestCoarseLocation) {
+-        if (sCurrentLocationRequested) return true;
+-        try (TraceEvent e =
+-                TraceEvent.scoped("GeolocationHeader.startListeningForLocationUpdates")) {
+-            FusedLocationProviderClient fusedLocationClient =
+-                    LocationServices.getFusedLocationProviderClient(
+-                            ContextUtils.getApplicationContext());
 -
--        String intentAction = intent.getAction();
--        for (String action : SUPERVISOR_START_ACTIONS) {
--            if (action.equals(intentAction)) {
--                return true;
--            }
+-            long updateDuration =
+-                    Duration.ofMinutes(OmniboxFeatures.sGeolocationRequestTimeoutMinutes.getValue())
+-                            .toMillis();
+-            PostTask.postDelayedTask(
+-                    TaskTraits.UI_DEFAULT,
+-                    () -> {
+-                        sCurrentLocationRequested = false;
+-                    },
+-                    updateDuration);
+-
+-            int granularity =
+-                    requestCoarseLocation
+-                            ? Granularity.GRANULARITY_COARSE
+-                            : Granularity.GRANULARITY_PERMISSION_LEVEL;
+-
+-            var locationRequest =
+-                    new LocationRequest.Builder(
+-                                    OmniboxFeatures.sGeolocationRequestUpdateInterval.getValue())
+-                            .setDurationMillis(updateDuration)
+-                            .setMaxUpdateAgeMillis(
+-                                    OmniboxFeatures.sGeolocationRequestMaxLocationAge.getValue())
+-                            .setPriority(OmniboxFeatures.sGeolocationRequestPriority.getValue())
+-                            .setGranularity(granularity)
+-                            .build();
+-            fusedLocationClient.requestLocationUpdates(locationRequest, sLocationListener, null);
+-            sCurrentLocationRequested = true;
+-        } catch (RuntimeException e) {
+-            // GMSCore may not exist on the device or be very old. Return false and trigger fallback
+-            // behavior.
+-            sCurrentLocationRequested = false;
 -        }
-         return false;
++        sCurrentLocationRequested = false;
+         return sCurrentLocationRequested;
      }
  
-@@ -133,14 +100,7 @@ public class InstantAppsHandler {
-                     SystemClock.elapsedRealtime() - startTime);
-             intent.removeExtra(INSTANT_APP_START_TIME_EXTRA);
+@@ -198,17 +154,9 @@ public class GeolocationHeader {
+             return;
          }
--        int callSource = IntentUtils.safeGetIntExtra(intent, BROWSER_LAUNCH_REASON, 0);
--        if (callSource > 0 && callSource < SOURCE_BOUNDARY) {
--            RecordHistogram.recordEnumeratedHistogram(
--                    "Android.InstantApps.CallSource", callSource, SOURCE_BOUNDARY);
--            intent.removeExtra(BROWSER_LAUNCH_REASON);
--        } else if (callSource >= SOURCE_BOUNDARY) {
--            Log.e(TAG, "Unexpected call source constant for Instant Apps: " + callSource);
--        }
-+        Log.e(TAG, "Unexpected call source constant for Instant Apps");
+         if (!sCurrentLocationRequested) return;
+-        FusedLocationProviderClient fusedLocationClient =
+-                LocationServices.getFusedLocationProviderClient(
+-                        ContextUtils.getApplicationContext());
+-        fusedLocationClient.removeLocationUpdates(sLocationListener);
+         sCurrentLocationRequested = false;
      }
  
-     /**
-@@ -175,9 +135,8 @@ public class InstantAppsHandler {
-             return false;
-         }
- 
--        if (IntentUtils.safeGetBooleanExtra(intent, DO_NOT_LAUNCH_EXTRA, false)
--                || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
--                           && (intent.getFlags() & FLAG_DO_NOT_LAUNCH) != 0)) {
-+        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-+                && (intent.getFlags() & FLAG_DO_NOT_LAUNCH) != 0)) {
-             maybeRecordFallbackStats(intent);
-             Log.i(TAG, "Not handling with Instant Apps (DO_NOT_LAUNCH_EXTRA)");
-             return false;
-@@ -207,7 +166,6 @@ public class InstantAppsHandler {
-         }
- 
-         Intent callbackIntent = new Intent(intent);
--        callbackIntent.putExtra(DO_NOT_LAUNCH_EXTRA, true);
-         callbackIntent.putExtra(INSTANT_APP_START_TIME_EXTRA, startTime);
- 
-         return tryLaunchingInstantApp(context, intent, isCustomTabsIntent, callbackIntent);
-@@ -309,12 +267,9 @@ public class InstantAppsHandler {
-         Intent iaIntent = data.getIntent();
-         if (data.getReferrer() != null) {
-             iaIntent.putExtra(Intent.EXTRA_REFERRER, data.getReferrer());
--            iaIntent.putExtra(IS_REFERRER_TRUSTED_EXTRA, true);
-         }
- 
-         Context appContext = ContextUtils.getApplicationContext();
--        iaIntent.putExtra(TRUSTED_REFERRER_PKG_EXTRA, appContext.getPackageName());
--        iaIntent.putExtra(IS_USER_CONFIRMED_LAUNCH_EXTRA, true);
- 
-         try {
-             appContext.startActivity(iaIntent);
+-    private static void onLocationUpdate(Location location) {
+-        sFusedLocation = location;
+-    }
+-
+     private static @HeaderState int geoHeaderStateForDse(
+             Profile profile, TemplateUrlService templateService) {
+         return geoHeaderStateForUrl(
 --- a/components/gcm_driver/instance_id/android/BUILD.gn
 +++ b/components/gcm_driver/instance_id/android/BUILD.gn
-@@ -15,7 +15,6 @@ generate_jni("test_support_jni_headers")
+@@ -16,7 +16,6 @@ generate_jni("test_support_jni_headers") {
  
  android_library("instance_id_driver_java") {
    deps = [
 -    "$google_play_services_package:google_play_services_iid_java",
      "//base:base_java",
+     "//build/android:build_java",
      "//components/gcm_driver/android:gcm_driver_java",
-     "//third_party/androidx:androidx_annotation_annotation_java",
-@@ -33,7 +32,6 @@ android_library("instance_id_driver_java
+@@ -38,7 +37,6 @@ android_library("instance_id_driver_java") {
  android_library("instance_id_driver_test_support_java") {
    deps = [
      ":instance_id_driver_java",
 -    "$google_play_services_package:google_play_services_iid_java",
-     "//base:base_java",
+     "//third_party/jni_zero:jni_zero_java",
    ]
  
 --- a/components/gcm_driver/instance_id/android/java/src/org/chromium/components/gcm_driver/instance_id/InstanceIDWithSubtype.java
 +++ b/components/gcm_driver/instance_id/android/java/src/org/chromium/components/gcm_driver/instance_id/InstanceIDWithSubtype.java
-@@ -10,8 +10,6 @@ import android.text.TextUtils;
+@@ -4,15 +4,10 @@
+ 
+ package org.chromium.components.gcm_driver.instance_id;
+ 
+-import android.content.Context;
+-import android.os.Bundle;
+ import android.text.TextUtils;
  
  import androidx.annotation.VisibleForTesting;
  
 -import com.google.android.gms.iid.InstanceID;
 -
- import org.chromium.base.ContextUtils;
+-import org.chromium.base.ContextUtils;
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.Nullable;
  
- import java.io.IOException;
-@@ -26,8 +24,6 @@ public class InstanceIDWithSubtype {
+@@ -29,8 +24,6 @@ public class InstanceIDWithSubtype {
      // Must match the private InstanceID.OPTION_SUBTYPE, which is guaranteed to not change.
      private static final String OPTION_SUBTYPE = "subtype";
  
 -    private final InstanceID mInstanceID;
 -
-     /**
-      * Cached instances. May be accessed from multiple threads; synchronize on sSubtypeInstancesLock
-      */
-@@ -39,10 +35,6 @@ public class InstanceIDWithSubtype {
+     /** Cached instances. May be accessed from multiple threads; synchronize on sSubtypeInstancesLock */
      @VisibleForTesting
-     protected static FakeFactory sFakeFactoryForTesting;
+     protected static final Map<String, InstanceIDWithSubtype> sSubtypeInstances = new HashMap<>();
+@@ -40,9 +33,7 @@ public class InstanceIDWithSubtype {
+     /** Fake subclasses can set this so getInstance creates instances of them. */
+     @VisibleForTesting protected static @Nullable FakeFactory sFakeFactoryForTesting;
  
 -    protected InstanceIDWithSubtype(InstanceID instanceID) {
 -        mInstanceID = instanceID;
 -    }
--
++    protected InstanceIDWithSubtype() {}
+ 
      /**
       * Returns an instance of this class. Unlike {@link InstanceID#getInstance(Context)}, it is not
-      * a singleton, but instead a different instance will be returned for each {@code subtype}.
-@@ -58,11 +50,6 @@ public class InstanceIDWithSubtype {
+@@ -59,11 +50,7 @@ public class InstanceIDWithSubtype {
                  if (sFakeFactoryForTesting != null) {
                      existing = sFakeFactoryForTesting.create(subtype);
                  } else {
@@ -209,10 +210,11 @@ Subject: Remove dependency on com.google.android.gms.fido,
 -                    InstanceID instanceID =
 -                            InstanceID.getInstance(ContextUtils.getApplicationContext(), options);
 -                    existing = new InstanceIDWithSubtype(instanceID);
++                    existing = new InstanceIDWithSubtype();
                  }
                  sSubtypeInstances.put(subtype, existing);
              }
-@@ -71,30 +58,25 @@ public class InstanceIDWithSubtype {
+@@ -72,30 +59,23 @@ public class InstanceIDWithSubtype {
      }
  
      public String getSubtype() {
@@ -230,16 +232,18 @@ Subject: Remove dependency on com.google.android.gms.fido,
 +        return 0;
      }
  
-     public void deleteInstanceID() throws IOException {
+-    public void deleteInstanceID() throws IOException {
 -        synchronized (sSubtypeInstancesLock) {
 -            sSubtypeInstances.remove(mInstanceID.getSubtype());
 -            mInstanceID.deleteInstanceID();
 -        }
-     }
+-    }
++    public void deleteInstanceID() throws IOException {}
  
-     public void deleteToken(String authorizedEntity, String scope) throws IOException {
+-    public void deleteToken(String authorizedEntity, String scope) throws IOException {
 -        mInstanceID.deleteToken(authorizedEntity, scope);
-     }
+-    }
++    public void deleteToken(String authorizedEntity, String scope) throws IOException {}
  
      public String getToken(String authorizedEntity, String scope) throws IOException {
 -        return mInstanceID.getToken(authorizedEntity, scope);
@@ -247,9 +251,39 @@ Subject: Remove dependency on com.google.android.gms.fido,
      }
  
      /** Fake subclasses can set {@link #sFakeFactoryForTesting} to an implementation of this. */
+--- a/components/omnibox/common/BUILD.gn
++++ b/components/omnibox/common/BUILD.gn
+@@ -63,7 +63,6 @@ if (is_android) {
+       ":jni_headers",
+     ]
+     deps = [
+-      "$google_play_services_package:google_play_services_location_java",
+       "//base:base_java",
+       "//chrome/browser/feedback/android:java",
+       "//components/cached_flags:java",
+--- a/components/omnibox/common/android/java/src/org/chromium/components/omnibox/OmniboxFeatures.java
++++ b/components/omnibox/common/android/java/src/org/chromium/components/omnibox/OmniboxFeatures.java
+@@ -10,8 +10,6 @@ import android.text.format.DateUtils;
+ 
+ import androidx.annotation.IntDef;
+ 
+-import com.google.android.gms.location.Priority;
+-
+ import org.chromium.base.ContextUtils;
+ import org.chromium.base.SysUtils;
+ import org.chromium.base.TimeUtils;
+@@ -216,7 +214,7 @@ public class OmniboxFeatures {
+             newIntParam(
+                     sUseFusedLocationProvider,
+                     "geolocation_request_priority",
+-                    Priority.PRIORITY_BALANCED_POWER_ACCURACY);
++                    102 /* Priority.PRIORITY_BALANCED_POWER_ACCURACY */);
+ 
+     public static final IntCachedFeatureParam sTouchDownTriggerMaxPrefetchesPerSession =
+             newIntParam(
 --- a/device/BUILD.gn
 +++ b/device/BUILD.gn
-@@ -453,7 +453,6 @@ if (is_android) {
+@@ -532,7 +532,6 @@ if (is_android) {
      deps = [
        "$google_play_services_package:google_play_services_base_java",
        "$google_play_services_package:google_play_services_basement_java",
@@ -257,1253 +291,309 @@ Subject: Remove dependency on com.google.android.gms.fido,
        "//base:base_java",
        "//base:base_java_test_support",
        "//base:base_junit_test_support",
+--- a/services/BUILD.gn
++++ b/services/BUILD.gn
+@@ -206,7 +206,6 @@ if (is_android) {
+     deps = [
+       "$google_play_services_package:google_play_services_base_java",
+       "$google_play_services_package:google_play_services_basement_java",
+-      "$google_play_services_package:google_play_services_location_java",
+       "$google_play_services_package:google_play_services_tasks_java",
+       "$google_play_services_package:google_play_services_vision_common_java",
+       "$google_play_services_package:google_play_services_vision_java",
 --- a/services/device/geolocation/BUILD.gn
 +++ b/services/device/geolocation/BUILD.gn
-@@ -165,7 +165,6 @@ if (is_android) {
+@@ -163,7 +163,6 @@ if (is_android) {
        ":geolocation_jni_headers",
        "$google_play_services_package:google_play_services_base_java",
        "$google_play_services_package:google_play_services_basement_java",
 -      "$google_play_services_package:google_play_services_location_java",
+       "$google_play_services_package:google_play_services_tasks_java",
        "//base:base_java",
-       "//components/location/android:location_java",
-       "//services/device/public/java:geolocation_java",
+       "//build/android:build_java",
 --- a/services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderGmsCore.java
 +++ b/services/device/geolocation/android/java/src/org/chromium/device/geolocation/LocationProviderGmsCore.java
-@@ -10,15 +10,6 @@ import android.content.pm.PackageManager
- import android.location.Location;
- import android.os.Bundle;
+@@ -4,27 +4,11 @@
  
--import com.google.android.gms.common.ConnectionResult;
--import com.google.android.gms.common.api.GoogleApiClient;
--import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
--import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
--import com.google.android.gms.location.FusedLocationProviderApi;
--import com.google.android.gms.location.LocationListener;
--import com.google.android.gms.location.LocationRequest;
--import com.google.android.gms.location.LocationServices;
+ package org.chromium.device.geolocation;
+ 
+-import android.Manifest;
+ import android.content.Context;
+-import android.content.pm.PackageManager;
+-import android.location.Location;
+-import android.os.SystemClock;
 -
+-import com.google.android.gms.location.FusedLocationProviderClient;
+-import com.google.android.gms.location.Granularity;
+-import com.google.android.gms.location.LocationCallback;
+-import com.google.android.gms.location.LocationRequest;
+-import com.google.android.gms.location.LocationResult;
+-import com.google.android.gms.location.LocationServices;
+ 
  import org.chromium.base.Log;
  import org.chromium.base.ThreadUtils;
- import org.chromium.components.location.LocationUtils;
-@@ -29,19 +20,14 @@ import org.chromium.gms.ChromiumPlayServ
-  *
-  * https://developers.google.com/android/reference/com/google/android/gms/location/package-summary
-  */
--public class LocationProviderGmsCore implements ConnectionCallbacks, OnConnectionFailedListener,
--                                                LocationListener, LocationProvider {
-+public class LocationProviderGmsCore implements LocationProvider {
+-import org.chromium.base.metrics.RecordHistogram;
+ import org.chromium.build.annotations.NullMarked;
+-import org.chromium.build.annotations.Nullable;
+-import org.chromium.components.permissions.PermissionsAndroidFeatureList;
+-import org.chromium.components.permissions.PermissionsAndroidFeatureMap;
+-import org.chromium.device.DeviceFeatureList;
+ import org.chromium.gms.ChromiumPlayServicesAvailability;
+ 
+ /**
+@@ -36,171 +20,28 @@ import org.chromium.gms.ChromiumPlayServicesAvailability;
+ public class LocationProviderGmsCore implements LocationProvider {
      private static final String TAG = "LocationProvider";
  
-     // Values for the LocationRequest's setInterval for normal and high accuracy, respectively.
-     private static final long UPDATE_INTERVAL_MS = 1000;
-     private static final long UPDATE_INTERVAL_FAST_MS = 500;
- 
--    private final GoogleApiClient mGoogleApiClient;
--    private FusedLocationProviderApi mLocationProviderApi = LocationServices.FusedLocationApi;
+-    // Values for the LocationRequest's setInterval for normal and high accuracy, respectively.
+-    private static final long UPDATE_INTERVAL_MS = 1000;
+-    private static final long UPDATE_INTERVAL_FAST_MS = 500;
 -
-     private boolean mEnablehighAccuracy;
--    private LocationRequest mLocationRequest;
- 
+-    private final Context mContext;
+-    private final FusedLocationProviderClient mClient;
+-    private boolean mEffectiveHighAccuracy;
+-
+-    private long mStartTime;
+-    private boolean mFirstPositionReceived;
+-
+-    private @Nullable LocationCallback mLocationCallback;
+-
      public static boolean isGooglePlayServicesAvailable(Context context) {
          return ChromiumPlayServicesAvailability.isGooglePlayServicesAvailable(context);
-@@ -49,117 +35,30 @@ public class LocationProviderGmsCore imp
+     }
  
      LocationProviderGmsCore(Context context) {
          Log.i(TAG, "Google Play Services");
--        mGoogleApiClient = new GoogleApiClient.Builder(context)
--                                   .addApi(LocationServices.API)
--                                   .addConnectionCallbacks(this)
--                                   .addOnConnectionFailedListener(this)
--                                   .build();
--        assert mGoogleApiClient != null;
+-        mContext = context;
+-        mClient = LocationServices.getFusedLocationProviderClient(context);
+-        assert mClient != null;
 -    }
 -
--    LocationProviderGmsCore(GoogleApiClient client, FusedLocationProviderApi locationApi) {
--        mGoogleApiClient = client;
--        mLocationProviderApi = locationApi;
+-    LocationProviderGmsCore(Context context, FusedLocationProviderClient client) {
+-        mContext = context;
+-        mClient = client;
      }
  
-     // ConnectionCallbacks implementation
--    @Override
--    public void onConnected(Bundle connectionHint) {
--        ThreadUtils.assertOnUiThread();
--
--        mLocationRequest = LocationRequest.create();
--        if (mGoogleApiClient.getContext().checkCallingOrSelfPermission(
--                    Manifest.permission.ACCESS_FINE_LOCATION)
+     // LocationProvider implementation
+     @Override
+     public void start(boolean enableHighAccuracy) {
+         ThreadUtils.assertOnUiThread();
+-        mEffectiveHighAccuracy = enableHighAccuracy;
+-        mStartTime = SystemClock.elapsedRealtime();
+-        mFirstPositionReceived = false;
+-        if (mContext.checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
 -                != PackageManager.PERMISSION_GRANTED) {
 -            // Workaround for a bug in Google Play Services where, if an app only has
 -            // ACCESS_COARSE_LOCATION, trying to request PRIORITY_HIGH_ACCURACY will throw a
 -            // SecurityException even on Android S. See: b/184924939.
--            mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
--        } else if (mEnablehighAccuracy) {
--            // With enableHighAccuracy, request a faster update interval and configure the provider
--            // for high accuracy mode.
--            mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
--                    .setInterval(UPDATE_INTERVAL_FAST_MS);
--        } else {
--            // Use balanced mode by default. In this mode, the API will prefer the network provider
--            // but may use sensor data (for instance, GPS) if high accuracy is requested by another
--            // app.
--            //
--            // If location is configured for sensors-only then elevate the priority to ensure GPS
--            // and other sensors are used.
--            if (LocationUtils.getInstance().isSystemLocationSettingSensorsOnly()) {
--                mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+-            mEffectiveHighAccuracy = false;
+-        }
+-        LocationRequest locationRequest;
+-        final long interval = mEffectiveHighAccuracy ? UPDATE_INTERVAL_FAST_MS : UPDATE_INTERVAL_MS;
+-        final int priority =
+-                mEffectiveHighAccuracy
+-                        ? LocationRequest.PRIORITY_HIGH_ACCURACY
+-                        : LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+-        // When the `APPROXIMATE_GEOLOCATION_PERMISSION` feature is enabled,
+-        // `mEffectiveHighAccuracy`
+-        // explicitly controls the location granularity. Otherwise, it only acts as a hint for the
+-        // location provider.
+-        if (PermissionsAndroidFeatureMap.isEnabled(
+-                PermissionsAndroidFeatureList.APPROXIMATE_GEOLOCATION_PERMISSION)) {
+-            LocationRequest.Builder builder =
+-                    new LocationRequest.Builder(
+-                            /* priority= */ priority, /* intervalMillis= */ interval);
+-            if (mEffectiveHighAccuracy) {
+-                builder.setGranularity(Granularity.GRANULARITY_FINE);
 -            } else {
--                mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+-                builder.setGranularity(Granularity.GRANULARITY_COARSE);
 -            }
--            mLocationRequest.setInterval(UPDATE_INTERVAL_MS);
+-            locationRequest = builder.build();
+-        } else {
+-            locationRequest = LocationRequest.create();
+-            locationRequest.setPriority(priority).setInterval(interval);
 -        }
 -
--        final Location location = mLocationProviderApi.getLastLocation(mGoogleApiClient);
--        if (location != null) {
--            LocationProviderAdapter.onNewLocationAvailable(location);
+-        if (DeviceFeatureList.sGmsCoreLocationRequestParamOverride.isEnabled()) {
+-            locationRequest =
+-                    new LocationRequest.Builder(locationRequest)
+-                            .setIntervalMillis(
+-                                    DeviceFeatureList.sGmsCoreLocationRequestUpdateInterval
+-                                            .getValue())
+-                            .setMaxUpdateAgeMillis(
+-                                    DeviceFeatureList.sGmsCoreLocationRequestMaxLocationAge
+-                                            .getValue())
+-                            .build();
 -        }
+-
+-        final boolean requestedHighAccuracy = enableHighAccuracy;
+-        stop();
+-        mLocationCallback =
+-                new LocationCallback() {
+-                    @Override
+-                    public void onLocationResult(LocationResult locationResult) {
+-                        if (mLocationCallback != this || locationResult == null) {
+-                            return;
+-                        }
+-                        Location location = locationResult.getLastLocation();
+-                        if (location != null) {
+-                            if (!mFirstPositionReceived) {
+-                                long durationMs = SystemClock.elapsedRealtime() - mStartTime;
+-                                String suffix =
+-                                        mEffectiveHighAccuracy ? ".Precise" : ".Approximate";
+-                                RecordHistogram.recordCustomTimesHistogram(
+-                                        "Geolocation.GMSCoreLocationProvider"
+-                                                + ".TimeToFirstPosition"
+-                                                + suffix,
+-                                        durationMs,
+-                                        1,
+-                                        10000,
+-                                        50);
+-                                mFirstPositionReceived = true;
+-                            }
+-                            if (location.hasAccuracy()) {
+-                                final String histogramName =
+-                                        "Geolocation.GMSCoreLocationProvider"
+-                                                + (mEffectiveHighAccuracy
+-                                                        ? ".HighAccuracyHint"
+-                                                        : ".LowAccuracyHint")
+-                                                + ".Accuracy";
+-                                RecordHistogram.recordCount100000Histogram(
+-                                        histogramName, (int) location.getAccuracy());
+-                            }
+-                            // Using `requestedHighAccuracy` for location update cause
+-                            // `mEffectiveHighAccuracy` can be override by app-level permission
+-                            // check.
+-                            LocationProviderAdapter.onNewLocationAvailable(
+-                                    location, requestedHighAccuracy);
+-                        }
+-                    }
+-                };
 -
 -        try {
 -            // Request updates on UI Thread replicating LocationProviderAndroid's behaviour.
--            mLocationProviderApi.requestLocationUpdates(
--                    mGoogleApiClient, mLocationRequest, this, ThreadUtils.getUiThreadLooper());
+-            mClient.requestLocationUpdates(
+-                            locationRequest, mLocationCallback, ThreadUtils.getUiThreadLooper())
+-                    .addOnFailureListener(
+-                            (e) -> {
+-                                Log.e(TAG, "mClient.requestLocationUpdates() " + e);
+-                                LocationProviderAdapter.newErrorAvailable(
+-                                        "Failed to request location updates: " + e.toString());
+-                            });
 -        } catch (IllegalStateException e) {
 -            // IllegalStateException is thrown "If this method is executed in a thread that has not
 -            // called Looper.prepare()".
--            Log.e(TAG, "mLocationProviderApi.requestLocationUpdates() " + e);
+-            Log.e(TAG, "mClient.requestLocationUpdates() " + e);
 -            LocationProviderAdapter.newErrorAvailable(
 -                    "Failed to request location updates: " + e.toString());
 -            assert false;
 -        } catch (SecurityException e) {
 -            // SecurityException is thrown when the app is missing location permissions. See
 -            // crbug.com/731271.
--            Log.e(TAG, "mLocationProviderApi.requestLocationUpdates() missing permissions " + e);
+-            Log.e(TAG, "mClient.requestLocationUpdates() missing permissions " + e);
 -            LocationProviderAdapter.newErrorAvailable(
 -                    "Failed to request location updates due to permissions: " + e.toString());
 -        }
--    }
--
--    @Override
--    public void onConnectionSuspended(int cause) {}
- 
-     // OnConnectionFailedListener implementation
--    @Override
--    public void onConnectionFailed(ConnectionResult result) {
--        LocationProviderAdapter.newErrorAvailable(
--                "Failed to connect to Google Play Services: " + result.toString());
--    }
- 
-     // LocationProvider implementation
-     @Override
-     public void start(boolean enableHighAccuracy) {
-         ThreadUtils.assertOnUiThread();
--        if (mGoogleApiClient.isConnected()) mGoogleApiClient.disconnect();
- 
-         mEnablehighAccuracy = enableHighAccuracy;
--        mGoogleApiClient.connect(); // Should return via onConnected().
      }
  
      @Override
      public void stop() {
          ThreadUtils.assertOnUiThread();
--        if (!mGoogleApiClient.isConnected()) return;
+-        mFirstPositionReceived = false;
 -
--        mLocationProviderApi.removeLocationUpdates(mGoogleApiClient, this);
--
--        mGoogleApiClient.disconnect();
+-        if (mLocationCallback != null) {
+-            mClient.removeLocationUpdates(mLocationCallback);
+-            mLocationCallback = null;
+-        }
      }
  
      @Override
      public boolean isRunning() {
          assert ThreadUtils.runningOnUiThread();
--        if (mGoogleApiClient == null) return false;
--        return mGoogleApiClient.isConnecting() || mGoogleApiClient.isConnected();
+-        return mLocationCallback != null;
 +        return false;
      }
- 
-     // LocationListener implementation
--    @Override
--    public void onLocationChanged(Location location) {
--        LocationProviderAdapter.onNewLocationAvailable(location);
--    }
  }
---- a/third_party/android_deps/BUILD.gn
-+++ b/third_party/android_deps/BUILD.gn
-@@ -1071,54 +1071,6 @@ if (!limit_android_deps) {
-   }
- 
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_fido_java") {
--    aar_path = "libs/com_google_android_gms_play_services_fido/play-services-fido-19.0.0-beta.aar"
--    info_path = "libs/com_google_android_gms_play_services_fido/com_google_android_gms_play_services_fido.info"
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_tasks_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_iid_java") {
--    aar_path = "libs/com_google_android_gms_play_services_iid/play-services-iid-17.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_iid/com_google_android_gms_play_services_iid.info"
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_stats_java",
--      ":google_play_services_tasks_java",
--      "//third_party/androidx:androidx_collection_collection_java",
--      "//third_party/androidx:androidx_core_core_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_instantapps_java") {
--    aar_path = "libs/com_google_android_gms_play_services_instantapps/play-services-instantapps-17.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_instantapps/com_google_android_gms_play_services_instantapps.info"
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_tasks_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_location_java") {
--    aar_path = "libs/com_google_android_gms_play_services_location/play-services-location-17.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_location/com_google_android_gms_play_services_location.info"
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_places_placereport_java",
--      ":google_play_services_tasks_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("google_play_services_tasks_java") {
-     aar_path = "libs/com_google_android_gms_play_services_tasks/play-services-tasks-17.2.0.aar"
-     info_path = "libs/com_google_android_gms_play_services_tasks/com_google_android_gms_play_services_tasks.info"
---- a/chrome/android/java/src/org/chromium/chrome/browser/externalnav/ExternalNavigationDelegateImpl.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/externalnav/ExternalNavigationDelegateImpl.java
-@@ -203,12 +203,6 @@ public class ExternalNavigationDelegateI
- 
-     @Override
-     public void maybeAdjustInstantAppExtras(Intent intent, boolean isIntentToInstantApp) {
--        if (isIntentToInstantApp) {
--            intent.putExtra(InstantAppsHandler.IS_GOOGLE_SEARCH_REFERRER, true);
--        } else {
--            // Make sure this extra is not sent unless we've done the verification.
--            intent.removeExtra(InstantAppsHandler.IS_GOOGLE_SEARCH_REFERRER);
--        }
+--- a/third_party/android_deps/autorolled/BUILD.gn
++++ b/third_party/android_deps/autorolled/BUILD.gn
+@@ -115,23 +115,6 @@ template("define_autorolled_targets") {
+       }
      }
  
-     @Override
---- a/chrome/android/features/cablev2_authenticator/BUILD.gn
-+++ b/chrome/android/features/cablev2_authenticator/BUILD.gn
-@@ -17,7 +17,6 @@ android_library("java") {
-     ":java_resources",
-     ":logging_java",
-     "$google_play_services_package:google_play_services_base_java",
--    "$google_play_services_package:google_play_services_fido_java",
-     "$google_play_services_package:google_play_services_tasks_java",
-     "$google_play_services_package:google_play_services_vision_common_java",
-     "$google_play_services_package:google_play_services_vision_java",
---- a/base/android/java/src/org/chromium/base/IntentUtils.java
-+++ b/base/android/java/src/org/chromium/base/IntentUtils.java
-@@ -41,9 +41,6 @@ public class IntentUtils {
-     public static final String ANDROID_APP_REFERRER_SCHEME = "android-app";
- 
-     // Instant Apps system resolver activity on N-MR1+.
--    @VisibleForTesting
--    public static final String EPHEMERAL_INSTALLER_CLASS =
--            "com.google.android.gms.instantapps.routing.EphemeralInstallerActivity";
- 
-     // TODO(mthiesse): Move to ApiHelperForS when it exist.
-     private static final int FLAG_MUTABLE = 1 << 25;
-@@ -71,7 +68,7 @@ public class IntentUtils {
-         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-             return info.isInstantAppAvailable;
-         } else if (info.activityInfo != null) {
--            return EPHEMERAL_INSTALLER_CLASS.equals(info.activityInfo.name);
-+            return false;
-         }
- 
-         return false;
---- a/services/BUILD.gn
-+++ b/services/BUILD.gn
-@@ -116,7 +116,6 @@ if (is_android) {
-     deps = [
-       "$google_play_services_package:google_play_services_base_java",
-       "$google_play_services_package:google_play_services_basement_java",
--      "$google_play_services_package:google_play_services_location_java",
-       "$google_play_services_package:google_play_services_vision_common_java",
-       "$google_play_services_package:google_play_services_vision_java",
-       "//base:base_java",
---- a/chrome/android/features/cablev2_authenticator/java/src/org/chromium/chrome/browser/webauth/authenticator/CableAuthenticator.java
-+++ b/chrome/android/features/cablev2_authenticator/java/src/org/chromium/chrome/browser/webauth/authenticator/CableAuthenticator.java
-@@ -15,25 +15,6 @@ import android.os.Build;
- import android.os.Bundle;
- import android.provider.Settings;
- 
--import com.google.android.gms.fido.Fido;
--import com.google.android.gms.fido.common.Transport;
--import com.google.android.gms.fido.fido2.Fido2PrivilegedApiClient;
--import com.google.android.gms.fido.fido2.api.common.Attachment;
--import com.google.android.gms.fido.fido2.api.common.AttestationConveyancePreference;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorAssertionResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorAttestationResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorErrorResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorSelectionCriteria;
--import com.google.android.gms.fido.fido2.api.common.BrowserPublicKeyCredentialCreationOptions;
--import com.google.android.gms.fido.fido2.api.common.BrowserPublicKeyCredentialRequestOptions;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredential;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialCreationOptions;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialDescriptor;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialParameters;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRequestOptions;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRpEntity;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialType;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialUserEntity;
- import com.google.android.gms.tasks.Task;
- 
- import org.chromium.base.Log;
-@@ -146,130 +127,17 @@ class CableAuthenticator {
-     public void makeCredential(String rpId, byte[] clientDataHash, byte[] userId, int[] algorithms,
-             byte[][] excludedCredentialIds, boolean residentKeyRequired) {
-         // TODO: handle concurrent requests
--        Fido2PrivilegedApiClient client = Fido.getFido2PrivilegedApiClient(mContext);
--        if (client == null) {
--            Log.i(TAG, "getFido2PrivilegedApiClient failed");
--            return;
--        }
--        Log.i(TAG, "have fido client");
-+        Log.i(TAG, "getFido2PrivilegedApiClient failed");
-+        return;
- 
--        List<PublicKeyCredentialParameters> parameters = new ArrayList<>();
--        for (int i = 0; i < algorithms.length; i++) {
--            try {
--                parameters.add(new PublicKeyCredentialParameters(
--                        PublicKeyCredentialType.PUBLIC_KEY.toString(), algorithms[i]));
--            } catch (IllegalArgumentException e) {
--                // The FIDO API will throw IllegalArgumentException for unrecognised algorithms.
--                // Since an authenticator ignores unknown algorithms, this exception just needs to
--                // be caught and ignored.
--            }
--        }
--        // The GmsCore FIDO2 API does not actually support resident keys yet.
--        AuthenticatorSelectionCriteria selection = new AuthenticatorSelectionCriteria.Builder()
--                                                           .setAttachment(Attachment.PLATFORM)
--                                                           .build();
--        List<PublicKeyCredentialDescriptor> excludeCredentials =
--                new ArrayList<PublicKeyCredentialDescriptor>();
--        for (int i = 0; i < excludedCredentialIds.length; i++) {
--            excludeCredentials.add(
--                    new PublicKeyCredentialDescriptor(PublicKeyCredentialType.PUBLIC_KEY.toString(),
--                            excludedCredentialIds[i], new ArrayList<Transport>()));
--        }
--        byte[] dummy = new byte[32];
--        PublicKeyCredentialCreationOptions credentialCreationOptions =
--                new PublicKeyCredentialCreationOptions.Builder()
--                        .setRp(new PublicKeyCredentialRpEntity(rpId, "", ""))
--                        .setUser(new PublicKeyCredentialUserEntity(userId, "", null, ""))
--                        // This is unused because we override it with
--                        // |setClientDataHash|, below. But a value must be set
--                        // to prevent this Builder from throwing an exception.
--                        .setChallenge(clientDataHash)
--                        .setParameters(parameters)
--                        .setTimeoutSeconds(TIMEOUT_SECONDS)
--                        .setExcludeList(excludeCredentials)
--                        .setAuthenticatorSelection(selection)
--                        .setAttestationConveyancePreference(AttestationConveyancePreference.NONE)
--                        .build();
--        BrowserPublicKeyCredentialCreationOptions browserRequestOptions =
--                new BrowserPublicKeyCredentialCreationOptions.Builder()
--                        .setPublicKeyCredentialCreationOptions(credentialCreationOptions)
--                        .setClientDataHash(clientDataHash)
--                        .setOrigin(Uri.parse("https://" + rpId))
--                        .build();
--        Task<PendingIntent> result = client.getRegisterPendingIntent(browserRequestOptions);
--        result.addOnSuccessListener(pendingIntent -> {
--                  Log.i(TAG, "got pending");
--                  try {
--                      mUi.startIntentSenderForResult(pendingIntent.getIntentSender(),
--                              REGISTER_REQUEST_CODE,
--                              null, // fillInIntent,
--                              0, // flagsMask,
--                              0, // flagsValue,
--                              0, // extraFlags,
--                              Bundle.EMPTY);
--                  } catch (IntentSender.SendIntentException e) {
--                      Log.e(TAG, "intent failure");
--                  }
--              }).addOnFailureListener(e -> { Log.e(TAG, "intent failure" + e); });
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_fido_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_fido/play-services-fido.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_fido/com_google_android_gms_play_services_fido.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-          "//third_party/android_deps:org_jetbrains_kotlinx_kotlinx_coroutines_core_java",
+-          "//third_party/kotlin_stdlib:kotlin_stdlib_java",
+-        ]
+-      }
+-    }
 -
--        Log.i(TAG, "op done");
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     if (google_play_services_package == "//third_party/android_deps") {
+@@ -148,56 +131,6 @@ template("define_autorolled_targets") {
+       }
      }
  
-     @CalledByNative
-     public void getAssertion(String rpId, byte[] clientDataHash, byte[][] allowedCredentialIds) {
-         // TODO: handle concurrent requests
--        Fido2PrivilegedApiClient client = Fido.getFido2PrivilegedApiClient(mContext);
--        if (client == null) {
--            Log.i(TAG, "getFido2PrivilegedApiClient failed");
--            return;
--        }
--        Log.i(TAG, "have fido client");
-+        Log.i(TAG, "getFido2PrivilegedApiClient failed");
-+        return;
- 
--        List<PublicKeyCredentialDescriptor> allowCredentials =
--                new ArrayList<PublicKeyCredentialDescriptor>();
--        ArrayList<Transport> transports = new ArrayList<Transport>();
--        transports.add(Transport.INTERNAL);
--        for (int i = 0; i < allowedCredentialIds.length; i++) {
--            allowCredentials.add(
--                    new PublicKeyCredentialDescriptor(PublicKeyCredentialType.PUBLIC_KEY.toString(),
--                            allowedCredentialIds[i], transports));
--        }
--
--        PublicKeyCredentialRequestOptions credentialRequestOptions =
--                new PublicKeyCredentialRequestOptions.Builder()
--                        .setAllowList(allowCredentials)
--                        // This is unused because we override it with
--                        // |setClientDataHash|, below. But a value must be set
--                        // to prevent this Builder from throwing an exception.
--                        .setChallenge(clientDataHash)
--                        .setRpId(rpId)
--                        .setTimeoutSeconds(TIMEOUT_SECONDS)
--                        .build();
--
--        BrowserPublicKeyCredentialRequestOptions browserRequestOptions =
--                new BrowserPublicKeyCredentialRequestOptions.Builder()
--                        .setPublicKeyCredentialRequestOptions(credentialRequestOptions)
--                        .setClientDataHash(clientDataHash)
--                        .setOrigin(Uri.parse("https://" + rpId))
--                        .build();
--
--        Task<PendingIntent> result = client.getSignPendingIntent(browserRequestOptions);
--        result.addOnSuccessListener(pendingIntent -> {
--                  Log.i(TAG, "got pending");
--                  try {
--                      mUi.startIntentSenderForResult(pendingIntent.getIntentSender(),
--                              SIGN_REQUEST_CODE,
--                              null, // fillInIntent,
--                              0, // flagsMask,
--                              0, // flagsValue,
--                              0, // extraFlags,
--                              Bundle.EMPTY);
--                  } catch (IntentSender.SendIntentException e) {
--                      Log.e(TAG, "intent failure");
--                  }
--              }).addOnFailureListener(e -> { Log.e(TAG, "intent failure" + e); });
--
--        Log.i(TAG, "op done");
-     }
- 
-     /**
-@@ -317,108 +185,15 @@ class CableAuthenticator {
-     }
- 
-     private boolean onRegisterResponse(int resultCode, Intent data) {
--        if (resultCode != Activity.RESULT_OK || data == null) {
--            Log.e(TAG, "Failed with result code " + resultCode);
--            onAuthenticatorAssertionResponse(CTAP2_ERR_OPERATION_DENIED, null, null, null);
--            return false;
--        }
--        Log.e(TAG, "OK.");
--
--        if (data.hasExtra(Fido.FIDO2_KEY_ERROR_EXTRA)) {
--            AuthenticatorErrorResponse error = AuthenticatorErrorResponse.deserializeFromBytes(
--                    data.getByteArrayExtra(Fido.FIDO2_KEY_ERROR_EXTRA));
--            Log.i(TAG,
--                    "error response: " + error.getErrorMessage() + " "
--                            + String.valueOf(error.getErrorCodeAsInt()));
--
--            // ErrorCode represents DOMErrors not CTAP status codes.
--            int ctap_status;
--            switch (error.getErrorCode()) {
--                case INVALID_STATE_ERR:
--                    // Assumed to be caused by a matching excluded credential.
--                    // (It's possible to match the error string to be sure,
--                    // but that's fragile.)
--                    ctap_status = CTAP2_ERR_CREDENTIAL_EXCLUDED;
--                    break;
--                case NOT_ALLOWED_ERR:
--                    ctap_status = CTAP2_ERR_OPERATION_DENIED;
--                    break;
--                default:
--                    ctap_status = CTAP2_ERR_OTHER;
--                    break;
--            }
--            onAuthenticatorAttestationResponse(CTAP2_ERR_OTHER, null);
--            return false;
--        }
--
--        if (!data.hasExtra(Fido.FIDO2_KEY_RESPONSE_EXTRA)
--                || !data.hasExtra(Fido.FIDO2_KEY_CREDENTIAL_EXTRA)) {
--            Log.e(TAG, "Missing FIDO2_KEY_RESPONSE_EXTRA or FIDO2_KEY_CREDENTIAL_EXTRA");
--            onAuthenticatorAttestationResponse(CTAP2_ERR_OTHER, null);
--            return false;
--        }
--
--        Log.e(TAG, "cred extra");
--        PublicKeyCredential unusedPublicKeyCredential = PublicKeyCredential.deserializeFromBytes(
--                data.getByteArrayExtra(Fido.FIDO2_KEY_CREDENTIAL_EXTRA));
--        AuthenticatorAttestationResponse response =
--                AuthenticatorAttestationResponse.deserializeFromBytes(
--                        data.getByteArrayExtra(Fido.FIDO2_KEY_RESPONSE_EXTRA));
--        onAuthenticatorAttestationResponse(CTAP2_OK, response.getAttestationObject());
--        return true;
-+        Log.e(TAG, "Failed with result code " + resultCode);
-+        onAuthenticatorAssertionResponse(CTAP2_ERR_OPERATION_DENIED, null, null, null);
-+        return false;
-     }
- 
-     private boolean onSignResponse(int resultCode, Intent data) {
--        if (resultCode != Activity.RESULT_OK || data == null) {
--            Log.e(TAG, "Failed with result code " + resultCode);
--            onAuthenticatorAssertionResponse(CTAP2_ERR_OPERATION_DENIED, null, null, null);
--            return false;
--        }
--        Log.e(TAG, "OK.");
--
--        if (data.hasExtra(Fido.FIDO2_KEY_ERROR_EXTRA)) {
--            AuthenticatorErrorResponse error = AuthenticatorErrorResponse.deserializeFromBytes(
--                    data.getByteArrayExtra(Fido.FIDO2_KEY_ERROR_EXTRA));
--            Log.i(TAG,
--                    "error response: " + error.getErrorMessage() + " "
--                            + String.valueOf(error.getErrorCodeAsInt()));
--
--            // ErrorCode represents DOMErrors not CTAP status codes.
--            int ctap_status;
--            switch (error.getErrorCode()) {
--                case INVALID_STATE_ERR:
--                    // Assumed to be because none of the credentials were
--                    // recognised. (It's possible to match the error string to
--                    // be sure, but that's fragile.)
--                    ctap_status = CTAP2_ERR_NO_CREDENTIALS;
--                    break;
--                case NOT_ALLOWED_ERR:
--                    ctap_status = CTAP2_ERR_OPERATION_DENIED;
--                    break;
--                default:
--                    ctap_status = CTAP2_ERR_OTHER;
--                    break;
--            }
--            onAuthenticatorAssertionResponse(ctap_status, null, null, null);
--            return false;
--        }
--
--        if (!data.hasExtra(Fido.FIDO2_KEY_RESPONSE_EXTRA)
--                || !data.hasExtra(Fido.FIDO2_KEY_CREDENTIAL_EXTRA)) {
--            Log.e(TAG, "Missing FIDO2_KEY_RESPONSE_EXTRA or FIDO2_KEY_CREDENTIAL_EXTRA");
--            onAuthenticatorAssertionResponse(CTAP2_ERR_OTHER, null, null, null);
--            return false;
--        }
--
--        Log.e(TAG, "cred extra");
--        PublicKeyCredential unusedPublicKeyCredential = PublicKeyCredential.deserializeFromBytes(
--                data.getByteArrayExtra(Fido.FIDO2_KEY_CREDENTIAL_EXTRA));
--        AuthenticatorAssertionResponse response =
--                AuthenticatorAssertionResponse.deserializeFromBytes(
--                        data.getByteArrayExtra(Fido.FIDO2_KEY_RESPONSE_EXTRA));
--        onAuthenticatorAssertionResponse(CTAP2_OK, response.getKeyHandle(),
--                response.getAuthenticatorData(), response.getSignature());
--        return true;
-+        Log.e(TAG, "Failed with result code " + resultCode);
-+        onAuthenticatorAssertionResponse(CTAP2_ERR_OPERATION_DENIED, null, null, null);
-+        return false;
-     }
- 
-     private void onAuthenticatorAttestationResponse(int ctapStatus, byte[] attestationObject) {
---- a/third_party/libaddressinput/src/android/src/main/java/com/android/i18n/addressinput/autocomplete/gmscore/AddressAutocompleteApiImpl.java
-+++ b/third_party/libaddressinput/src/android/src/main/java/com/android/i18n/addressinput/autocomplete/gmscore/AddressAutocompleteApiImpl.java
-@@ -2,15 +2,6 @@ package com.android.i18n.addressinput.au
- 
- import android.location.Location;
- import android.util.Log;
--import com.google.android.gms.common.api.GoogleApiClient;
--import com.google.android.gms.common.api.ResultCallback;
--import com.google.android.gms.location.FusedLocationProviderApi;
--import com.google.android.gms.location.places.AutocompleteFilter;
--import com.google.android.gms.location.places.AutocompletePrediction;
--import com.google.android.gms.location.places.AutocompletePredictionBuffer;
--import com.google.android.gms.location.places.GeoDataApi;
--import com.google.android.gms.maps.model.LatLng;
--import com.google.android.gms.maps.model.LatLngBounds;
- import com.google.common.util.concurrent.FutureCallback;
- import com.google.i18n.addressinput.common.AddressAutocompleteApi;
- import com.google.i18n.addressinput.common.AddressAutocompletePrediction;
-@@ -38,70 +29,18 @@ import java.util.List;
- public class AddressAutocompleteApiImpl implements AddressAutocompleteApi {
- 
-   private static final String TAG = "GmsCoreAddrAutocmplt";
--  private GoogleApiClient googleApiClient;
- 
--  // Use Places.GeoDataApi.
--  private GeoDataApi geoDataApi;
--
--  // Use LocationServices.FusedLocationApi.
--  private FusedLocationProviderApi locationApi;
--
--  public AddressAutocompleteApiImpl(
--      GoogleApiClient googleApiClient,
--      GeoDataApi geoDataApi,
--      FusedLocationProviderApi locationApi) {
--    this.googleApiClient = googleApiClient;
--    this.geoDataApi = geoDataApi;
--    this.locationApi = locationApi;
-+  public AddressAutocompleteApiImpl() {
-   }
- 
-   // TODO(user): Add a check to ensure that the required permissions have been granted.
-   @Override
-   public boolean isConfiguredCorrectly() {
--    if (!googleApiClient.isConnected()) {
--      Log.e(TAG, "Cannot get autocomplete predictions because Google API client is not connected.");
--      return false;
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_iid_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_iid/play-services-iid.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_iid/com_google_android_gms_play_services_iid.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-          "//third_party/androidx:androidx_collection_collection_java",
+-          "//third_party/androidx:androidx_core_core_java",
+-        ]
+-      }
 -    }
 -
--    return true;
-+    return false;
-   }
- 
-   @Override
-   public void getAutocompletePredictions(
-       String query, final FutureCallback<List<? extends AddressAutocompletePrediction>> callback) {
--    Location deviceLocation = locationApi.getLastLocation(googleApiClient);
--    LatLngBounds bounds =
--        deviceLocation == null
--            ? null
--            : LatLngBounds.builder()
--                .include(new LatLng(deviceLocation.getLatitude(), deviceLocation.getLongitude()))
--                .build();
--
--    geoDataApi
--        .getAutocompletePredictions(
--            googleApiClient,
--            query,
--            bounds,
--            new AutocompleteFilter.Builder()
--                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ADDRESS)
--                .build())
--        .setResultCallback(
--            new ResultCallback<AutocompletePredictionBuffer>() {
--              @Override
--              public void onResult(AutocompletePredictionBuffer resultBuffer) {
--                callback.onSuccess(convertPredictions(resultBuffer));
--              }
--            });
--  }
--
--  private List<? extends AddressAutocompletePrediction> convertPredictions(
--      AutocompletePredictionBuffer resultBuffer) {
--    List<AddressAutocompletePrediction> predictions = new ArrayList<>();
--
--    for (AutocompletePrediction prediction : resultBuffer) {
--      predictions.add(new AddressAutocompletePredictionImpl(prediction));
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_instantapps_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_instantapps/play-services-instantapps.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_instantapps/com_google_android_gms_play_services_instantapps.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-        ]
+-      }
 -    }
 -
--    return predictions;
-   }
- }
---- a/third_party/libaddressinput/src/android/src/main/java/com/android/i18n/addressinput/autocomplete/gmscore/AddressAutocompletePredictionImpl.java
-+++ b/third_party/libaddressinput/src/android/src/main/java/com/android/i18n/addressinput/autocomplete/gmscore/AddressAutocompletePredictionImpl.java
-@@ -1,6 +1,5 @@
- package com.android.i18n.addressinput.autocomplete.gmscore;
- 
--import com.google.android.gms.location.places.AutocompletePrediction;
- import com.google.i18n.addressinput.common.AddressAutocompletePrediction;
- 
- /**
-@@ -9,24 +8,21 @@ import com.google.i18n.addressinput.comm
-  */
- public class AddressAutocompletePredictionImpl extends AddressAutocompletePrediction {
- 
--  private AutocompletePrediction prediction;
--
--  AddressAutocompletePredictionImpl(AutocompletePrediction prediction) {
--    this.prediction = prediction;
-+  AddressAutocompletePredictionImpl() {
-   }
- 
-   @Override
-   public String getPlaceId() {
--    return prediction.getPlaceId();
-+    return "";
-   }
- 
-   @Override
-   public CharSequence getPrimaryText() {
--    return prediction.getPrimaryText(null);
-+    return "";
-   }
- 
-   @Override
-   public CharSequence getSecondaryText() {
--    return prediction.getSecondaryText(null);
-+    return "";
-   }
- }
---- a/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java
-+++ b/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2CredentialRequest.java
-@@ -14,18 +14,6 @@ import androidx.annotation.IntDef;
- import androidx.annotation.Nullable;
- import androidx.annotation.VisibleForTesting;
- 
--import com.google.android.gms.fido.Fido;
--import com.google.android.gms.fido.fido2.Fido2PrivilegedApiClient;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorAssertionResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorAttestationResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorErrorResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorResponse;
--import com.google.android.gms.fido.fido2.api.common.BrowserPublicKeyCredentialCreationOptions;
--import com.google.android.gms.fido.fido2.api.common.BrowserPublicKeyCredentialRequestOptions;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredential;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialCreationOptions;
--import com.google.android.gms.tasks.Task;
--
- import org.chromium.base.ContextUtils;
- import org.chromium.base.Log;
- import org.chromium.blink.mojom.AuthenticatorStatus;
-@@ -58,7 +46,6 @@ public class Fido2CredentialRequest impl
-     private GetAssertionResponseCallback mGetAssertionCallback;
-     private MakeCredentialResponseCallback mMakeCredentialCallback;
-     private FidoErrorResponseCallback mErrorCallback;
--    private Fido2PrivilegedApiClient mFido2ApiClient;
-     private WebContents mWebContents;
-     private WindowAndroid mWindow;
-     private @RequestStatus int mRequestStatus;
-@@ -119,24 +106,6 @@ public class Fido2CredentialRequest impl
-             returnErrorAndResetCallback(securityCheck);
-             return;
-         }
--
--        PublicKeyCredentialCreationOptions credentialCreationOptions;
--        try {
--            credentialCreationOptions = Fido2Helper.toMakeCredentialOptions(options);
--        } catch (NoSuchAlgorithmException e) {
--            returnErrorAndResetCallback(AuthenticatorStatus.ALGORITHM_UNSUPPORTED);
--            return;
--        }
--
--        BrowserPublicKeyCredentialCreationOptions browserRequestOptions =
--                new BrowserPublicKeyCredentialCreationOptions.Builder()
--                        .setPublicKeyCredentialCreationOptions(credentialCreationOptions)
--                        .setOrigin(Uri.parse(convertOriginToString(origin)))
--                        .build();
--
--        Task<PendingIntent> result =
--                mFido2ApiClient.getRegisterPendingIntent(browserRequestOptions);
--        result.addOnSuccessListener(this::onGotPendingIntent);
-     }
- 
-     public void handleGetAssertionRequest(PublicKeyCredentialRequestOptions options,
-@@ -169,15 +138,7 @@ public class Fido2CredentialRequest impl
-             mAppIdExtensionUsed = true;
-         }
- 
--        com.google.android.gms.fido.fido2.api.common
--                .PublicKeyCredentialRequestOptions getAssertionOptions;
--        getAssertionOptions = Fido2Helper.toGetAssertionOptions(options);
--
-         String callerOriginString = convertOriginToString(callerOrigin);
--        BrowserPublicKeyCredentialRequestOptions.Builder browserRequestOptionsBuilder =
--                new BrowserPublicKeyCredentialRequestOptions.Builder()
--                        .setPublicKeyCredentialRequestOptions(getAssertionOptions)
--                        .setOrigin(Uri.parse(callerOriginString));
- 
-         if (payment != null
-                 && PaymentFeatureList.isEnabled(PaymentFeatureList.SECURE_PAYMENT_CONFIRMATION)) {
-@@ -203,12 +164,7 @@ public class Fido2CredentialRequest impl
-                 returnErrorAndResetCallback(AuthenticatorStatus.NOT_ALLOWED_ERROR);
-                 return;
-             }
--            browserRequestOptionsBuilder.setClientDataHash(clientDataHash);
-         }
--
--        Task<PendingIntent> result =
--                mFido2ApiClient.getSignPendingIntent(browserRequestOptionsBuilder.build());
--        result.addOnSuccessListener(this::onGotPendingIntent);
-     }
- 
-     public void handleIsUserVerifyingPlatformAuthenticatorAvailableRequest(
-@@ -224,31 +180,16 @@ public class Fido2CredentialRequest impl
-             callback.onIsUserVerifyingPlatformAuthenticatorAvailableResponse(false);
-             return;
-         }
--
--        Task<Boolean> result =
--                mFido2ApiClient.isUserVerifyingPlatformAuthenticatorAvailable()
--                        .addOnSuccessListener((isUVPAA) -> {
--                            callback.onIsUserVerifyingPlatformAuthenticatorAvailableResponse(
--                                    isUVPAA);
--                        });
-     }
- 
-     /* Initialize the FIDO2 browser API client. */
-     private boolean initFido2ApiClient() {
--        if (mFido2ApiClient != null) {
--            return true;
--        }
--
-         if (!ExternalAuthUtils.getInstance().canUseGooglePlayServices(
-                     new UserRecoverableErrorHandler.Silent())) {
-             return false;
-         }
- 
--        mFido2ApiClient = Fido.getFido2PrivilegedApiClient(ContextUtils.getApplicationContext());
--        if (mFido2ApiClient == null) {
--            return false;
--        }
--        return true;
-+        return false;
-     }
- 
-     // Handles a PendingIntent from the GMSCore Fido library.
-@@ -295,13 +236,11 @@ public class Fido2CredentialRequest impl
-         if (data == null) {
-             Log.e(TAG, "Received a null intent.");
-             // The user canceled the request.
--            returnErrorAndResetCallback(AuthenticatorStatus.NOT_ALLOWED_ERROR);
-             return;
-         }
- 
-         switch (resultCode) {
-             case Activity.RESULT_CANCELED:
--                returnErrorAndResetCallback(AuthenticatorStatus.NOT_ALLOWED_ERROR);
-                 break;
-             case Activity.RESULT_OK:
-                 processIntentResult(data);
-@@ -315,58 +254,15 @@ public class Fido2CredentialRequest impl
-     }
- 
-     private void processPublicKeyCredential(Intent data) {
--        PublicKeyCredential publicKeyCredential = PublicKeyCredential.deserializeFromBytes(
--                data.getByteArrayExtra(FIDO2_KEY_CREDENTIAL_EXTRA));
--        AuthenticatorResponse response = publicKeyCredential.getResponse();
--        if (response instanceof AuthenticatorErrorResponse) {
--            processErrorResponse((AuthenticatorErrorResponse) response);
--        } else if (response instanceof AuthenticatorAttestationResponse) {
--            try {
--                mMakeCredentialCallback.onRegisterResponse(AuthenticatorStatus.SUCCESS,
--                        Fido2Helper.toMakeCredentialResponse(publicKeyCredential));
--                mMakeCredentialCallback = null;
--            } catch (NoSuchAlgorithmException e) {
--                returnErrorAndResetCallback(AuthenticatorStatus.ALGORITHM_UNSUPPORTED);
--            }
--        } else if (response instanceof AuthenticatorAssertionResponse) {
--            mGetAssertionCallback.onSignResponse(AuthenticatorStatus.SUCCESS,
--                    Fido2Helper.toGetAssertionResponse(
--                            publicKeyCredential, mAppIdExtensionUsed, mClientDataJson));
--            mClientDataJson = null;
--            mGetAssertionCallback = null;
--        }
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_location_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_location/play-services-location.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_location/com_google_android_gms_play_services_location.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-          "//third_party/android_deps:org_jetbrains_kotlinx_kotlinx_coroutines_android_java",
+-          "//third_party/android_deps:org_jetbrains_kotlinx_kotlinx_coroutines_core_java",
+-          "//third_party/kotlin_stdlib:kotlin_stdlib_java",
+-        ]
+-      }
 -    }
 -
--    private void processErrorResponse(AuthenticatorErrorResponse errorResponse) {
--        Log.e(TAG,
--                "Google Play Services FIDO2 API returned an error: "
--                        + errorResponse.getErrorMessage());
--        int authenticatorStatus = Fido2Helper.convertError(
--                errorResponse.getErrorCode(), errorResponse.getErrorMessage());
--        returnErrorAndResetCallback(authenticatorStatus);
-     }
- 
-     private void processKeyResponse(Intent data) {
-         switch (mRequestStatus) {
-             case REGISTER_REQUEST:
-                 Log.e(TAG, "Received a register response from Google Play Services FIDO2 API");
--                try {
--                    mMakeCredentialCallback.onRegisterResponse(AuthenticatorStatus.SUCCESS,
--                            Fido2Helper.toMakeCredentialResponse(
--                                    AuthenticatorAttestationResponse.deserializeFromBytes(
--                                            data.getByteArrayExtra(
--                                                    Fido.FIDO2_KEY_RESPONSE_EXTRA))));
--                } catch (NoSuchAlgorithmException e) {
--                    returnErrorAndResetCallback(AuthenticatorStatus.ALGORITHM_UNSUPPORTED);
--                }
-                 break;
-             case SIGN_REQUEST:
-                 Log.e(TAG, "Received a sign response from Google Play Services FIDO2 API");
--                mGetAssertionCallback.onSignResponse(AuthenticatorStatus.SUCCESS,
--                        Fido2Helper.toGetAssertionResponse(
--                                AuthenticatorAssertionResponse.deserializeFromBytes(
--                                        data.getByteArrayExtra(Fido.FIDO2_KEY_RESPONSE_EXTRA)),
--                                mAppIdExtensionUsed));
-                 break;
-         }
-         mMakeCredentialCallback = null;
-@@ -379,17 +275,11 @@ public class Fido2CredentialRequest impl
-         // [Attestation/Assertion/Error] Response.
-         if (data.hasExtra(FIDO2_KEY_CREDENTIAL_EXTRA)) {
-             processPublicKeyCredential(data);
--        } else if (data.hasExtra(Fido.FIDO2_KEY_ERROR_EXTRA)) {
--            processErrorResponse(AuthenticatorErrorResponse.deserializeFromBytes(
--                    data.getByteArrayExtra(Fido.FIDO2_KEY_ERROR_EXTRA)));
--        } else if (data.hasExtra(Fido.FIDO2_KEY_RESPONSE_EXTRA)) {
--            processKeyResponse(data);
-         } else {
-             // Something went wrong.
-             Log.e(TAG,
-                     "The response is missing FIDO2_KEY_RESPONSE_EXTRA "
-                             + "and FIDO2_KEY_CREDENTIAL_EXTRA.");
--            returnErrorAndResetCallback(AuthenticatorStatus.UNKNOWN_ERROR);
-         }
-     }
- 
---- a/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2Helper.java
-+++ b/components/webauthn/android/java/src/org/chromium/components/webauthn/Fido2Helper.java
-@@ -9,26 +9,6 @@ import android.util.Base64;
- import androidx.annotation.Nullable;
- import androidx.annotation.VisibleForTesting;
- 
--import com.google.android.gms.fido.common.Transport;
--import com.google.android.gms.fido.fido2.api.common.Attachment;
--import com.google.android.gms.fido.fido2.api.common.AttestationConveyancePreference;
--import com.google.android.gms.fido.fido2.api.common.AuthenticationExtensions;
--import com.google.android.gms.fido.fido2.api.common.AuthenticationExtensionsClientOutputs;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorAssertionResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorAttestationResponse;
--import com.google.android.gms.fido.fido2.api.common.AuthenticatorSelectionCriteria;
--import com.google.android.gms.fido.fido2.api.common.ErrorCode;
--import com.google.android.gms.fido.fido2.api.common.FidoAppIdExtension;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredential;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialCreationOptions;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialDescriptor;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialParameters;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRpEntity;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialType;
--import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialUserEntity;
--import com.google.android.gms.fido.fido2.api.common.UserVerificationMethodExtension;
--import com.google.android.gms.fido.fido2.api.common.UvmEntries;
--
- import org.chromium.base.Log;
- import org.chromium.base.annotations.CalledByNative;
- import org.chromium.base.annotations.JNINamespace;
-@@ -77,222 +57,30 @@ public final class Fido2Helper {
-      * @return Options to be passed to Fido2 API.
-      * @throws NoSuchAlgorithmException
-      */
--    public static PublicKeyCredentialCreationOptions toMakeCredentialOptions(
--            org.chromium.blink.mojom.PublicKeyCredentialCreationOptions options)
--            throws NoSuchAlgorithmException {
--        // Pack incoming options as Fido2's BrowserMakeCredentialOptions.
--        String rpIcon = options.relyingParty.icon != null ? options.relyingParty.icon.url : null;
--        PublicKeyCredentialRpEntity rp = new PublicKeyCredentialRpEntity(
--                options.relyingParty.id, options.relyingParty.name, rpIcon);
--
--        String userIcon = options.user.icon != null ? options.user.icon.url : null;
--        PublicKeyCredentialUserEntity user = new PublicKeyCredentialUserEntity(
--                options.user.id, options.user.name, userIcon, options.user.displayName);
--
--        List<PublicKeyCredentialParameters> parameters = new ArrayList<>();
--        for (org.chromium.blink.mojom.PublicKeyCredentialParameters param :
--                options.publicKeyParameters) {
--            if (param.algorithmIdentifier == ECDSA_COSE_IDENTIFIER
--                    && param.type == org.chromium.blink.mojom.PublicKeyCredentialType.PUBLIC_KEY) {
--                parameters.add(new PublicKeyCredentialParameters(
--                        PublicKeyCredentialType.PUBLIC_KEY.toString(), param.algorithmIdentifier));
--            }
--        }
--
--        // Check that at least one incoming param is supported by the FIDO2 API.
--        if (parameters.size() == 0 && options.publicKeyParameters.length != 0) {
--            Log.e(TAG, "None of the requested parameters are supported.");
--            throw new NoSuchAlgorithmException();
--        }
--
--        List<PublicKeyCredentialDescriptor> excludeCredentials =
--                convertCredentialDescriptor(options.excludeCredentials);
--
--        AuthenticatorSelectionCriteria selection =
--                convertSelectionCriteria(options.authenticatorSelection);
--
--        AttestationConveyancePreference attestationPreference =
--                convertAttestationPreference(options.attestation);
--
--        PublicKeyCredentialCreationOptions credentialCreationOptions =
--                new PublicKeyCredentialCreationOptions.Builder()
--                        .setRp(rp)
--                        .setUser(user)
--                        .setChallenge(options.challenge)
--                        .setParameters(parameters)
--                        .setTimeoutSeconds(adjustTimeout(options.timeout))
--                        .setExcludeList(excludeCredentials)
--                        .setAuthenticatorSelection(selection)
--                        .setAttestationConveyancePreference(attestationPreference)
--                        .build();
--        return credentialCreationOptions;
--    }
- 
-     /**
-      * Converts gmscore AuthenticatorAttestationResponse to mojo MakeCredentialAuthenticatorResponse
-      * @param data Response from the Fido2 API.
-      * @return Response to be passed to the renderer.
-      */
--    public static MakeCredentialAuthenticatorResponse toMakeCredentialResponse(
--            AuthenticatorAttestationResponse data) throws NoSuchAlgorithmException {
--        MakeCredentialAuthenticatorResponse response = new MakeCredentialAuthenticatorResponse();
--        CommonCredentialInfo info = new CommonCredentialInfo();
--
--        response.attestationObject = data.getAttestationObject();
--        AttestationObjectParts parts = new AttestationObjectParts();
--        if (!Fido2HelperJni.get().parseAttestationObject(response.attestationObject, parts)) {
--            // A failure to parse the attestation object is fatal to the request
--            // on desktop and so the same behavior is used here.
--            throw new NoSuchAlgorithmException();
--        }
--        response.publicKeyAlgo = parts.coseAlgorithm;
--        info.authenticatorData = parts.authenticatorData;
--        response.publicKeyDer = parts.spki;
--
--        // An empty transports array indicates that we don't have any
--        // information about the available transports.
--        response.transports = new int[] {};
--
--        info.id = encodeId(data.getKeyHandle());
--        info.rawId = data.getKeyHandle();
--        info.clientDataJson = data.getClientDataJSON();
--        response.info = info;
--        return response;
--    }
- 
--    public static MakeCredentialAuthenticatorResponse toMakeCredentialResponse(
--            PublicKeyCredential data) throws NoSuchAlgorithmException {
--        MakeCredentialAuthenticatorResponse response =
--                toMakeCredentialResponse((AuthenticatorAttestationResponse) data.getResponse());
--        return response;
--    }
- 
-     /**
-      * Converts mojo options to gmscore options.
-      * @param options Options passed in from the renderer.
-      * @return Options to be passed to Fido2 API.
-      */
--    public static com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRequestOptions
--    toGetAssertionOptions(PublicKeyCredentialRequestOptions options) {
--        List<PublicKeyCredentialDescriptor> allowCredentials =
--                convertCredentialDescriptor(options.allowCredentials);
--
--        FidoAppIdExtension fidoAppIdExtension =
--                (options.appid != null) ? new FidoAppIdExtension(options.appid) : null;
--        UserVerificationMethodExtension userVerificationMethodExtension =
--                new UserVerificationMethodExtension(options.userVerificationMethods);
--        AuthenticationExtensions authenticationExtensions =
--                new AuthenticationExtensions.Builder()
--                        .setFido2Extension(fidoAppIdExtension)
--                        .setUserVerificationMethodExtension(userVerificationMethodExtension)
--                        .build();
--
--        // Pack options as Fido2's BrowserPublicKeyCredentialRequestOptions.
--        com.google.android.gms.fido.fido2.api.common
--                .PublicKeyCredentialRequestOptions credentialRequestOptions =
--                new com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRequestOptions
--                        .Builder()
--                        .setChallenge(options.challenge)
--                        .setTimeoutSeconds(adjustTimeout(options.timeout))
--                        .setRpId(options.relyingPartyId)
--                        .setAllowList(allowCredentials)
--                        /* TODO add back UserVerificationRequirement when the FIDO2 API supports it
--                         */
--                        .setAuthenticationExtensions(authenticationExtensions)
--                        .build();
--        return credentialRequestOptions;
--    }
- 
-     /**
-      * Helper method that creates GetAssertionAuthenticatorResponse objects.
-      */
--    public static GetAssertionAuthenticatorResponse toGetAssertionResponse(
--            AuthenticatorAssertionResponse data, boolean appIdExtensionUsed) {
--        GetAssertionAuthenticatorResponse response = new GetAssertionAuthenticatorResponse();
--        CommonCredentialInfo info = new CommonCredentialInfo();
--        response.signature = data.getSignature();
--        response.echoAppidExtension = appIdExtensionUsed;
--        info.authenticatorData = data.getAuthenticatorData();
--        info.id = encodeId(data.getKeyHandle());
--        info.rawId = data.getKeyHandle();
--        info.clientDataJson = data.getClientDataJSON();
--        response.info = info;
--        return response;
--    }
- 
--    public static GetAssertionAuthenticatorResponse toGetAssertionResponse(
--            PublicKeyCredential data, boolean appIdExtensionUsed, @Nullable String clientDataJson) {
--        GetAssertionAuthenticatorResponse response = toGetAssertionResponse(
--                (AuthenticatorAssertionResponse) data.getResponse(), appIdExtensionUsed);
--        AuthenticationExtensionsClientOutputs extensionsClientOutputs =
--                data.getClientExtensionResults();
--
--        if (clientDataJson != null) {
--            response.info.clientDataJson = clientDataJson.getBytes();
--        }
--
--        if (extensionsClientOutputs != null && extensionsClientOutputs.getUvmEntries() != null) {
--            response.echoUserVerificationMethods = true;
--            response.userVerificationMethods =
--                    getUserVerificationMethods(extensionsClientOutputs.getUvmEntries());
--        }
--        return response;
--    }
- 
-     /**
-      * Helper method to convert AuthenticatorErrorResponse errors.
-      * @param errorCode
-      * @return error code corresponding to an AuthenticatorStatus.
-      */
--    public static int convertError(ErrorCode errorCode, String errorMsg) {
--        // TODO(b/113347251): Use specific error codes instead of strings when GmsCore Fido2
--        // provides them.
--        switch (errorCode) {
--            case SECURITY_ERR:
--                // AppId or rpID fails validation.
--                return AuthenticatorStatus.INVALID_DOMAIN;
--            case TIMEOUT_ERR:
--                return AuthenticatorStatus.NOT_ALLOWED_ERROR;
--            case ENCODING_ERR:
--                // Error encoding results (after user consent).
--                return AuthenticatorStatus.UNKNOWN_ERROR;
--            case NOT_ALLOWED_ERR:
--                // The implementation doesn't support resident keys.
--                if (errorMsg != null
--                        && (errorMsg.equals(NON_EMPTY_ALLOWLIST_ERROR_MSG)
--                                || errorMsg.equals(NON_VALID_ALLOWED_CREDENTIALS_ERROR_MSG))) {
--                    return AuthenticatorStatus.EMPTY_ALLOW_CREDENTIALS;
--                }
--                // The request is not allowed, possibly because the user denied permission.
--                return AuthenticatorStatus.NOT_ALLOWED_ERROR;
--            case DATA_ERR:
--            // Incoming requests were malformed/inadequate. Fallthrough.
--            case NOT_SUPPORTED_ERR:
--                // Request parameters were not supported.
--                return AuthenticatorStatus.ANDROID_NOT_SUPPORTED_ERROR;
--            case CONSTRAINT_ERR:
--                if (errorMsg != null && errorMsg.equals(NO_SCREENLOCK_ERROR_MSG)) {
--                    return AuthenticatorStatus.USER_VERIFICATION_UNSUPPORTED;
--                } else {
--                    // The user attempted to use a credential that was already registered.
--                    return AuthenticatorStatus.CREDENTIAL_EXCLUDED;
--                }
--            case INVALID_STATE_ERR:
--                if (errorMsg != null && errorMsg.equals(CREDENTIAL_EXISTS_ERROR_MSG)) {
--                    return AuthenticatorStatus.CREDENTIAL_EXCLUDED;
--                }
--            // else fallthrough.
--            case UNKNOWN_ERR:
--                if (errorMsg != null && errorMsg.equals(LOW_LEVEL_ERROR_MSG)) {
--                    // The error message returned from GmsCore when the user attempted to use a
--                    // credential that is not registered with a U2F security key.
--                    return AuthenticatorStatus.NOT_ALLOWED_ERROR;
--                }
--            // fall through
--            default:
--                return AuthenticatorStatus.UNKNOWN_ERROR;
--        }
--    }
- 
-     /**
-      * Base64 encodes the raw id.
-@@ -309,92 +97,6 @@ public final class Fido2Helper {
-      * @param uvmEntries defined in gmscore.
-      * @return userVerificationMethods defined in authenticato.mojom.
-      */
--    private static UvmEntry[] getUserVerificationMethods(UvmEntries uvmEntries) {
--        List<com.google.android.gms.fido.fido2.api.common.UvmEntry> uvmEntryList =
--                uvmEntries.getUvmEntryList();
--        UvmEntry[] userVerificationMethods = new UvmEntry[uvmEntryList.size()];
--        for (int i = 0; i < uvmEntryList.size(); i++) {
--            UvmEntry uvmEntry = new UvmEntry();
--            uvmEntry.userVerificationMethod = uvmEntryList.get(i).getUserVerificationMethod();
--            uvmEntry.keyProtectionType = uvmEntryList.get(i).getKeyProtectionType();
--            uvmEntry.matcherProtectionType = uvmEntryList.get(i).getMatcherProtectionType();
--            userVerificationMethods[i] = uvmEntry;
--        }
--        return userVerificationMethods;
--    }
--
--    private static List<PublicKeyCredentialDescriptor> convertCredentialDescriptor(
--            org.chromium.blink.mojom.PublicKeyCredentialDescriptor[] mojoDescriptors) {
--        if (mojoDescriptors == null) {
--            return null;
--        }
--
--        List<PublicKeyCredentialDescriptor> descriptors = new ArrayList<>();
--        for (org.chromium.blink.mojom.PublicKeyCredentialDescriptor descriptor : mojoDescriptors) {
--            descriptors.add(
--                    new PublicKeyCredentialDescriptor(PublicKeyCredentialType.PUBLIC_KEY.toString(),
--                            descriptor.id, toTransportList(descriptor.transports)));
--        }
--        return descriptors;
--    }
--
--    private static AuthenticatorSelectionCriteria convertSelectionCriteria(
--            org.chromium.blink.mojom.AuthenticatorSelectionCriteria mojoSelection) {
--        if (mojoSelection == null) return null;
--
--        return new AuthenticatorSelectionCriteria.Builder()
--                .setAttachment(convertAttachment(mojoSelection.authenticatorAttachment))
--                .setRequireResidentKey(mojoSelection.residentKey == ResidentKeyRequirement.REQUIRED)
--                .build();
--    }
--
--    private static List<Transport> toTransportList(int[] mojoTransports) {
--        List<Transport> fidoTransports = new ArrayList<>();
--        for (int transport : mojoTransports) {
--            fidoTransports.add(convertTransport(transport));
--        }
--        return fidoTransports;
--    }
--
--    private static Transport convertTransport(int transport) {
--        switch (transport) {
--            case AuthenticatorTransport.USB:
--                return Transport.USB;
--            case AuthenticatorTransport.NFC:
--                return Transport.NFC;
--            case AuthenticatorTransport.BLE:
--                return Transport.BLUETOOTH_LOW_ENERGY;
--            case AuthenticatorTransport.INTERNAL:
--                return Transport.INTERNAL;
--            default:
--                return Transport.USB;
--        }
--    }
--
--    private static Attachment convertAttachment(int attachment) {
--        if (attachment == AuthenticatorAttachment.NO_PREFERENCE) {
--            return null;
--        } else if (attachment == AuthenticatorAttachment.CROSS_PLATFORM) {
--            return Attachment.CROSS_PLATFORM;
--        } else {
--            return Attachment.PLATFORM;
--        }
--    }
--
--    private static AttestationConveyancePreference convertAttestationPreference(int preference) {
--        switch (preference) {
--            case org.chromium.blink.mojom.AttestationConveyancePreference.NONE:
--                return AttestationConveyancePreference.NONE;
--            case org.chromium.blink.mojom.AttestationConveyancePreference.INDIRECT:
--                return AttestationConveyancePreference.INDIRECT;
--            case org.chromium.blink.mojom.AttestationConveyancePreference.DIRECT:
--                return AttestationConveyancePreference.DIRECT;
--            case org.chromium.blink.mojom.AttestationConveyancePreference.ENTERPRISE:
--                return AttestationConveyancePreference.NONE;
--            default:
--                return AttestationConveyancePreference.NONE;
--        }
--    }
- 
-     /**
-      * Adjusts a timeout between a reasonable minimum and maximum.
---- a/components/webauthn/android/BUILD.gn
-+++ b/components/webauthn/android/BUILD.gn
-@@ -27,7 +27,6 @@ android_library("java") {
-   ]
-   annotation_processor_deps = [ "//base/android/jni_generator:jni_processor" ]
-   deps = [
--    "$google_play_services_package:google_play_services_fido_java",
-     "$google_play_services_package:google_play_services_tasks_java",
-     "//base:base_java",
-     "//base:jni_java",
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     if (google_play_services_package == "//third_party/android_deps") {

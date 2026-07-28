@@ -4,29 +4,39 @@ Subject: Remove dependency on com.google.android.gms.vision,
  com.google.android.gms.clearcut, com.google.android.gms.phenotype
 
 ---
- chrome/android/BUILD.gn                                                                                         |    2 
- chrome/android/features/cablev2_authenticator/BUILD.gn                                                          |    2 
- chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/scan_tab/QrCodeScanMediator.java |   55 ----
- services/BUILD.gn                                                                                               |    4 
- services/shape_detection/BUILD.gn                                                                               |    2 
- services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionImpl.java                |  114 ----------
- services/shape_detection/android/java/src/org/chromium/shape_detection/FaceDetectionImplGmsCore.java            |   93 --------
- services/shape_detection/android/java/src/org/chromium/shape_detection/TextDetectionImpl.java                   |   52 ----
- third_party/android_deps/BUILD.gn                                                                               |   63 -----
- 9 files changed, 8 insertions(+), 379 deletions(-)
+  chrome/android/BUILD.gn                            |   2 -
+  services/BUILD.gn                                  |   4 -
+  services/shape_detection/BUILD.gn                  |   2 -
+  .../shape_detection/BarcodeDetectionImpl.java      | 132 +--------------------
+  .../org/chromium/shape_detection/BitmapUtils.java  |   2 -
+  .../shape_detection/FaceDetectionImplGmsCore.java  | 116 ++----------------
+  .../shape_detection/TextDetectionImpl.java         |  71 +----------
+  third_party/android_deps/autorolled/BUILD.gn       |  56 ---------
+  third_party/cardboard/BUILD.gn                     |   2 -
+  9 files changed, 19 insertions(+), 368 deletions(-)
 
+--- a/chrome/android/BUILD.gn
++++ b/chrome/android/BUILD.gn
+@@ -323,7 +323,5 @@ if (_is_default_toolchain) {
+       "$google_play_services_package:google_play_services_basement_java",
+       "$google_play_services_package:google_play_services_tasks_java",
+-      "$google_play_services_package:google_play_services_vision_common_java",
+-      "$google_play_services_package:google_play_services_vision_java",
+       "//base:content_uri_utils_java",
+       "//base:flagged_apis_java",
+       "//base:process_launcher_java",
 --- a/services/BUILD.gn
 +++ b/services/BUILD.gn
-@@ -116,8 +116,6 @@ if (is_android) {
-     deps = [
+@@ -207,8 +207,6 @@ if (is_android) {
        "$google_play_services_package:google_play_services_base_java",
        "$google_play_services_package:google_play_services_basement_java",
+       "$google_play_services_package:google_play_services_tasks_java",
 -      "$google_play_services_package:google_play_services_vision_common_java",
 -      "$google_play_services_package:google_play_services_vision_java",
        "//base:base_java",
        "//base:base_java_test_support",
        "//base:base_junit_test_support",
-@@ -148,8 +146,6 @@ if (is_android) {
+@@ -251,8 +249,6 @@ if (is_android) {
      deps = [
        "$google_play_services_package:google_play_services_base_java",
        "$google_play_services_package:google_play_services_basement_java",
@@ -37,7 +47,7 @@ Subject: Remove dependency on com.google.android.gms.vision,
        "//mojo/public/java:base_java",
 --- a/services/shape_detection/BUILD.gn
 +++ b/services/shape_detection/BUILD.gn
-@@ -117,8 +117,6 @@ if (is_android) {
+@@ -132,8 +132,6 @@ if (is_android) {
      deps = [
        "$google_play_services_package:google_play_services_base_java",
        "$google_play_services_package:google_play_services_basement_java",
@@ -48,24 +58,33 @@ Subject: Remove dependency on com.google.android.gms.vision,
        "//mojo/public/java:bindings_java",
 --- a/services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionImpl.java
 +++ b/services/shape_detection/android/java/src/org/chromium/shape_detection/BarcodeDetectionImpl.java
-@@ -8,10 +8,6 @@ import android.graphics.Point;
- import android.graphics.Rect;
- import android.util.SparseArray;
+@@ -4,19 +4,8 @@
  
+ package org.chromium.shape_detection;
+ 
+-import android.graphics.Point;
+-import android.graphics.Rect;
+-import android.util.SparseArray;
+-
 -import com.google.android.gms.vision.Frame;
 -import com.google.android.gms.vision.barcode.Barcode;
 -import com.google.android.gms.vision.barcode.BarcodeDetector;
 -
- import org.chromium.base.ContextUtils;
+-import org.chromium.base.ContextUtils;
  import org.chromium.base.Log;
- import org.chromium.gfx.mojom.PointF;
-@@ -28,50 +24,7 @@ import org.chromium.shape_detection.mojo
+ import org.chromium.build.annotations.NullMarked;
+-import org.chromium.gfx.mojom.PointF;
+-import org.chromium.gfx.mojom.RectF;
+ import org.chromium.mojo.system.MojoException;
+ import org.chromium.shape_detection.mojom.BarcodeDetection;
+ import org.chromium.shape_detection.mojom.BarcodeDetectionResult;
+@@ -28,101 +17,16 @@ import org.chromium.shape_detection.mojom.BarcodeFormat;
  public class BarcodeDetectionImpl implements BarcodeDetection {
      private static final String TAG = "BarcodeDetectionImpl";
  
--    private BarcodeDetector mBarcodeDetector;
+-    private final BarcodeDetector mBarcodeDetector;
 -
-     public BarcodeDetectionImpl(BarcodeDetectorOptions options) {
+-    public BarcodeDetectionImpl(BarcodeDetectorOptions options) {
 -        int formats = Barcode.ALL_FORMATS;
 -        if (options.formats != null && options.formats.length > 0) {
 -            formats = 0;
@@ -104,16 +123,19 @@ Subject: Remove dependency on com.google.android.gms.vision,
 -                }
 -            }
 -        }
--        mBarcodeDetector = new BarcodeDetector.Builder(ContextUtils.getApplicationContext())
--                                   .setBarcodeFormats(formats)
--                                   .build();
-     }
+-        mBarcodeDetector =
+-                new BarcodeDetector.Builder(ContextUtils.getApplicationContext())
+-                        .setBarcodeFormats(formats)
+-                        .build();
+-    }
++    public BarcodeDetectionImpl(BarcodeDetectorOptions options) {}
  
      @Override
-@@ -80,47 +33,12 @@ public class BarcodeDetectionImpl implem
-         // on the device; this happens "fast", but it might have not completed,
-         // bail in this case. Also, the API was disabled between and v.9.0 and
-         // v.9.2, see https://developers.google.com/android/guides/releases.
+     public void detect(org.chromium.skia.mojom.BitmapN32 bitmapData, Detect_Response callback) {
+-        // The vision library will be downloaded the first time the API is used
+-        // on the device; this happens "fast", but it might have not completed,
+-        // bail in this case. Also, the API was disabled between and v.9.0 and
+-        // v.9.2, see https://developers.google.com/android/guides/releases.
 -        if (!mBarcodeDetector.isOperational()) {
 -            Log.e(TAG, "BarcodeDetector is not operational");
 -            callback.call(new BarcodeDetectionResult[0]);
@@ -155,12 +177,14 @@ Subject: Remove dependency on com.google.android.gms.vision,
      }
  
      @Override
-     public void close() {
+-    public void close() {
 -        mBarcodeDetector.release();
-     }
+-    }
++    public void close() {}
  
      @Override
-@@ -129,34 +47,6 @@ public class BarcodeDetectionImpl implem
+     public void onConnectionError(MojoException e) {
+@@ -130,34 +34,6 @@ public class BarcodeDetectionImpl implements BarcodeDetection {
      }
  
      private int toBarcodeFormat(int format) {
@@ -197,20 +221,34 @@ Subject: Remove dependency on com.google.android.gms.vision,
  }
 --- a/services/shape_detection/android/java/src/org/chromium/shape_detection/FaceDetectionImplGmsCore.java
 +++ b/services/shape_detection/android/java/src/org/chromium/shape_detection/FaceDetectionImplGmsCore.java
-@@ -7,11 +7,6 @@ package org.chromium.shape_detection;
- import android.graphics.PointF;
- import android.util.SparseArray;
+@@ -5,25 +5,11 @@
+ package org.chromium.shape_detection;
+ import org.chromium.build.annotations.NullMarked;
  
+-import android.graphics.PointF;
+-import android.util.SparseArray;
+-
 -import com.google.android.gms.vision.Frame;
 -import com.google.android.gms.vision.face.Face;
 -import com.google.android.gms.vision.face.FaceDetector;
 -import com.google.android.gms.vision.face.Landmark;
 -
- import org.chromium.base.ContextUtils;
+-import org.chromium.base.ContextUtils;
  import org.chromium.base.Log;
- import org.chromium.gfx.mojom.RectF;
-@@ -36,26 +31,10 @@ public class FaceDetectionImplGmsCore im
-     private static final int MAX_EULER_Z = 15;
+-import org.chromium.gfx.mojom.RectF;
+ import org.chromium.mojo.system.MojoException;
+ import org.chromium.shape_detection.mojom.FaceDetection;
+ import org.chromium.shape_detection.mojom.FaceDetectionResult;
+ import org.chromium.shape_detection.mojom.FaceDetectorOptions;
+-import org.chromium.shape_detection.mojom.LandmarkType;
+-
+-import java.util.ArrayList;
+-import java.util.List;
+ 
+ /**
+  * Google Play services implementation of the FaceDetection service defined in
+@@ -35,110 +21,26 @@ public class FaceDetectionImplGmsCore implements FaceDetection {
+     private static final int MAX_FACES = 32;
      private final int mMaxFaces;
      private final boolean mFastMode;
 -    private final FaceDetector mFaceDetector;
@@ -236,10 +274,10 @@ Subject: Remove dependency on com.google.android.gms.vision,
      }
  
      @Override
-@@ -63,80 +42,12 @@ public class FaceDetectionImplGmsCore im
-         // The vision library will be downloaded the first time the API is used
-         // on the device; this happens "fast", but it might have not completed,
-         // bail in this case.
+     public void detect(org.chromium.skia.mojom.BitmapN32 bitmapData, Detect_Response callback) {
+-        // The vision library will be downloaded the first time the API is used
+-        // on the device; this happens "fast", but it might have not completed,
+-        // bail in this case.
 -        if (!mFaceDetector.isOperational()) {
 -            Log.e(TAG, "FaceDetector is not operational");
 -
@@ -280,7 +318,8 @@ Subject: Remove dependency on com.google.android.gms.vision,
 -            for (int j = 0; j < landmarks.size(); j++) {
 -                final Landmark landmark = landmarks.get(j);
 -                final int landmarkType = landmark.getType();
--                if (landmarkType != Landmark.LEFT_EYE && landmarkType != Landmark.RIGHT_EYE
+-                if (landmarkType != Landmark.LEFT_EYE
+-                        && landmarkType != Landmark.RIGHT_EYE
 -                        && landmarkType != Landmark.BOTTOM_MOUTH
 -                        && landmarkType != Landmark.NOSE_BASE) {
 -                    continue;
@@ -305,48 +344,70 @@ Subject: Remove dependency on com.google.android.gms.vision,
 -                }
 -                mojoLandmarks.add(mojoLandmark);
 -            }
--            faceArray[i].landmarks = mojoLandmarks.toArray(
--                    new org.chromium.shape_detection.mojom.Landmark[mojoLandmarks.size()]);
+-            faceArray[i].landmarks =
+-                    mojoLandmarks.toArray(
+-                            new org.chromium.shape_detection.mojom.Landmark[mojoLandmarks.size()]);
 -        }
 -        callback.call(faceArray);
 +        Log.e(TAG, "FaceDetector is not operational");
-+        return;
++
++        // Fallback to Android's FaceDetectionImpl.
++        FaceDetectorOptions options = new FaceDetectorOptions();
++        options.fastMode = mFastMode;
++        options.maxDetectedFaces = mMaxFaces;
++        FaceDetectionImpl detector = new FaceDetectionImpl(options);
++        detector.detect(bitmapData, callback);
      }
  
      @Override
-     public void close() {
+-    public void close() {
 -        mFaceDetector.release();
-     }
+-    }
++    public void close() {}
  
      @Override
+     public void onConnectionError(MojoException e) {
 --- a/services/shape_detection/android/java/src/org/chromium/shape_detection/TextDetectionImpl.java
 +++ b/services/shape_detection/android/java/src/org/chromium/shape_detection/TextDetectionImpl.java
-@@ -8,10 +8,6 @@ import android.graphics.Point;
- import android.graphics.Rect;
- import android.util.SparseArray;
+@@ -4,21 +4,9 @@
  
+ package org.chromium.shape_detection;
+ 
+-import android.graphics.Point;
+-import android.graphics.Rect;
+-import android.util.SparseArray;
+-
 -import com.google.android.gms.vision.Frame;
 -import com.google.android.gms.vision.text.TextBlock;
 -import com.google.android.gms.vision.text.TextRecognizer;
 -
- import org.chromium.base.ContextUtils;
+-import org.chromium.base.ContextUtils;
  import org.chromium.base.Log;
- import org.chromium.gfx.mojom.PointF;
-@@ -27,10 +23,7 @@ import org.chromium.shape_detection.mojo
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.Nullable;
+-import org.chromium.gfx.mojom.PointF;
+-import org.chromium.gfx.mojom.RectF;
+-import org.chromium.gms.ChromiumPlayServicesAvailability;
+ import org.chromium.mojo.system.MojoException;
+ import org.chromium.shape_detection.mojom.TextDetection;
+ import org.chromium.shape_detection.mojom.TextDetectionResult;
+@@ -28,59 +16,16 @@ import org.chromium.shape_detection.mojom.TextDetectionResult;
  public class TextDetectionImpl implements TextDetection {
      private static final String TAG = "TextDetectionImpl";
  
--    private TextRecognizer mTextRecognizer;
+-    private final TextRecognizer mTextRecognizer;
 -
-     public TextDetectionImpl() {
+-    public TextDetectionImpl() {
 -        mTextRecognizer = new TextRecognizer.Builder(ContextUtils.getApplicationContext()).build();
-     }
+-    }
++    public TextDetectionImpl() {}
  
      @Override
-@@ -39,46 +32,11 @@ public class TextDetectionImpl implement
-         // on the device; this happens "fast", but it might have not completed,
-         // bail in this case. Also, the API was disabled between and v.9.0 and
-         // v.9.2, see https://developers.google.com/android/guides/releases.
+     public void detect(org.chromium.skia.mojom.BitmapN32 bitmapData, Detect_Response callback) {
+-        // The vision library will be downloaded the first time the API is used
+-        // on the device; this happens "fast", but it might have not completed,
+-        // bail in this case. Also, the API was disabled between and v.9.0 and
+-        // v.9.2, see https://developers.google.com/android/guides/releases.
 -        if (!mTextRecognizer.isOperational()) {
 -            Log.e(TAG, "TextDetector is not operational");
 -            callback.call(new TextDetectionResult[0]);
@@ -383,20 +444,23 @@ Subject: Remove dependency on com.google.android.gms.vision,
 -        }
 -        callback.call(detectedTextArray);
 +        Log.e(TAG, "TextDetector is not operational");
++        callback.call(new TextDetectionResult[0]);
      }
  
      @Override
-     public void close() {
+-    public void close() {
 -        mTextRecognizer.release();
-     }
+-    }
++    public void close() {}
  
      @Override
-@@ -87,11 +45,7 @@ public class TextDetectionImpl implement
+     public void onConnectionError(MojoException e) {
+@@ -88,11 +33,7 @@ public class TextDetectionImpl implements TextDetection {
      }
  
-     public static TextDetection create() {
+     public static @Nullable TextDetection create() {
 -        if (!ChromiumPlayServicesAvailability.isGooglePlayServicesAvailable(
--                    ContextUtils.getApplicationContext())) {
+-                ContextUtils.getApplicationContext())) {
 -            Log.e(TAG, "Google Play Services not available");
 -            return null;
 -        }
@@ -405,202 +469,86 @@ Subject: Remove dependency on com.google.android.gms.vision,
 +        return null;
      }
  }
---- a/third_party/android_deps/BUILD.gn
-+++ b/third_party/android_deps/BUILD.gn
-@@ -1078,30 +1078,6 @@ if (!limit_android_deps) {
-   }
- 
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_vision_java") {
--    aar_path = "libs/com_google_android_gms_play_services_vision/play-services-vision-18.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_vision/com_google_android_gms_play_services_vision.info"
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_vision_common_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_vision_common_java") {
--    aar_path = "libs/com_google_android_gms_play_services_vision_common/play-services-vision-common-18.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_vision_common/com_google_android_gms_play_services_vision_common.info"
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_clearcut_java",
--      ":google_play_services_flags_java",
--      ":google_play_services_phenotype_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("com_google_android_material_material_java") {
-     aar_path =
-         "libs/com_google_android_material_material/material-1.6.0-alpha01.aar"
-@@ -1678,26 +1654,6 @@ if (!limit_android_deps) {
-   }
- 
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_clearcut_java") {
--    aar_path = "libs/com_google_android_gms_play_services_clearcut/play-services-clearcut-17.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_clearcut/com_google_android_gms_play_services_clearcut.info"
--
--    # To remove visibility constraint, add this dependency to
--    # //third_party/android_deps/build.gradle.
--    visibility = [
--      ":*",
--      "//third_party/androidx:*",
--    ]
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_phenotype_java",
--      ":google_play_services_tasks_java",
--      "//third_party/androidx:androidx_core_core_java",
--    ]
--  }
--
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("google_play_services_flags_java") {
-     aar_path = "libs/com_google_android_gms_play_services_flags/play-services-flags-17.0.0.aar"
-     info_path = "libs/com_google_android_gms_play_services_flags/com_google_android_gms_play_services_flags.info"
-@@ -1714,25 +1670,6 @@ if (!limit_android_deps) {
-     ]
-   }
- 
--  # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("google_play_services_phenotype_java") {
--    aar_path = "libs/com_google_android_gms_play_services_phenotype/play-services-phenotype-17.0.0.aar"
--    info_path = "libs/com_google_android_gms_play_services_phenotype/com_google_android_gms_play_services_phenotype.info"
--
--    # To remove visibility constraint, add this dependency to
--    # //third_party/android_deps/build.gradle.
--    visibility = [
--      ":*",
--      "//third_party/androidx:*",
--    ]
--    deps = [
--      ":google_play_services_base_java",
--      ":google_play_services_basement_java",
--      ":google_play_services_tasks_java",
--      "//third_party/androidx:androidx_core_core_java",
--    ]
--  }
--
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
-   android_aar_prebuilt("google_play_services_places_placereport_java") {
-     aar_path = "libs/com_google_android_gms_play_services_places_placereport/play-services-places-placereport-17.0.0.aar"
---- a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/scan_tab/QrCodeScanMediator.java
-+++ b/chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/scan_tab/QrCodeScanMediator.java
-@@ -17,10 +17,6 @@ import android.provider.Browser;
- import android.util.SparseArray;
- import android.webkit.URLUtil;
- 
--import com.google.android.gms.vision.Frame;
--import com.google.android.gms.vision.barcode.Barcode;
--import com.google.android.gms.vision.barcode.BarcodeDetector;
--
- import org.chromium.base.IntentUtils;
- import org.chromium.base.metrics.RecordUserAction;
- import org.chromium.base.task.AsyncTask;
-@@ -48,7 +44,6 @@ public class QrCodeScanMediator implemen
-     private final NavigationObserver mNavigationObserver;
-     private final AndroidPermissionDelegate mPermissionDelegate;
- 
--    private BarcodeDetector mDetector;
-     private Toast mToast;
- 
-     /**
-@@ -67,7 +62,6 @@ public class QrCodeScanMediator implemen
-         mNavigationObserver = observer;
- 
-         // Set detector to null until it gets initialized asynchronously.
--        mDetector = null;
-         initBarcodeDetectorAsync();
+--- a/third_party/android_deps/autorolled/BUILD.gn
++++ b/third_party/android_deps/autorolled/BUILD.gn
+@@ -304,38 +304,6 @@ template("define_autorolled_targets") {
+       }
      }
  
-@@ -142,43 +136,7 @@ public class QrCodeScanMediator implemen
-      */
-     @Override
-     public void onPreviewFrame(byte[] data, Camera camera) {
--        if (mDetector == null) {
--            return;
--        }
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_vision_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_vision/play-services-vision.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_vision/com_google_android_gms_play_services_vision.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_vision_common_java",
+-        ]
+-      }
+-    }
 -
--        ByteBuffer buffer = ByteBuffer.allocate(data.length);
--        buffer.put(data);
--        Frame frame =
--                new Frame.Builder()
--                        .setImageData(buffer, camera.getParameters().getPreviewSize().width,
--                                camera.getParameters().getPreviewSize().height, ImageFormat.NV21)
--                        .build();
--        SparseArray<Barcode> barcodes = mDetector.detect(frame);
--        if (!mPropertyModel.get(QrCodeScanViewProperties.IS_ON_FOREGROUND)) {
--            return;
--        }
--        if (barcodes.size() == 0) {
--            camera.setOneShotPreviewCallback(this);
--            return;
--        }
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_vision_common_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_vision_common/play-services-vision-common.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_vision_common/com_google_android_gms_play_services_vision_common.info"
+-        enable_bytecode_checks = false
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_clearcut_java",
+-          "$google_play_services_package:google_play_services_flags_java",
+-          "$google_play_services_package:google_play_services_phenotype_java",
+-        ]
+-      }
+-    }
 -
--        Barcode firstCode = barcodes.valueAt(0);
--        if (!URLUtil.isValidUrl(firstCode.rawValue)) {
--            String toastMessage =
--                    mContext.getString(R.string.qr_code_not_a_url_label, firstCode.rawValue);
--            if (mToast != null) {
--                mToast.cancel();
--            }
--            mToast = Toast.makeText(mContext, toastMessage, Toast.LENGTH_LONG);
--            mToast.show();
--            RecordUserAction.record("SharingQRCode.ScannedNonURL");
--            camera.setOneShotPreviewCallback(this);
--            return;
--        }
--
--        openUrl(firstCode.rawValue);
--        mNavigationObserver.onNavigation();
--        RecordUserAction.record("SharingQRCode.ScannedURL");
-+        return;
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     if (!defined(material_design_target)) {
+@@ -1067,30 +1035,6 @@ template("define_autorolled_targets") {
+       ]
      }
  
-     private void openUrl(String url) {
-@@ -195,16 +153,5 @@ public class QrCodeScanMediator implemen
-     }
- 
-     private void initBarcodeDetectorAsync() {
--        new AsyncTask<BarcodeDetector>() {
--            @Override
--            protected BarcodeDetector doInBackground() {
--                return new BarcodeDetector.Builder(mContext).build();
--            }
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    if (google_play_services_package == "//third_party/android_deps") {
+-      android_aar_prebuilt("google_play_services_clearcut_java") {
+-        aar_path = "autorolled/cipd/libs/com_google_android_gms_play_services_clearcut/play-services-clearcut.aar"
+-        info_path = "autorolled/committed/libs/com_google_android_gms_play_services_clearcut/com_google_android_gms_play_services_clearcut.info"
+-        enable_bytecode_checks = false
 -
--            @Override
--            protected void onPostExecute(BarcodeDetector detector) {
--                mDetector = detector;
--            }
--        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-     }
- }
---- a/chrome/android/BUILD.gn
-+++ b/chrome/android/BUILD.gn
-@@ -310,8 +310,6 @@ android_library("chrome_java") {
+-        # To remove visibility constraint, add this dependency to
+-        # //third_party/android_deps/autorolled/build.gradle.template
+-        visibility = [
+-          ":*",
+-          "//third_party/androidx:*",
+-        ]
+-        deps = [
+-          "$google_play_services_package:google_play_services_base_java",
+-          "$google_play_services_package:google_play_services_basement_java",
+-          "$google_play_services_package:google_play_services_phenotype_java",
+-          "$google_play_services_package:google_play_services_tasks_java",
+-          "//third_party/androidx:androidx_core_core_java",
+-        ]
+-      }
+-    }
+-
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     if (google_play_services_package == "//third_party/android_deps") {
+--- a/third_party/cardboard/BUILD.gn
++++ b/third_party/cardboard/BUILD.gn
+@@ -53,8 +53,6 @@ android_library("cardboard_java") {
+     ":cardboard_resources",
      "$google_play_services_package:google_play_services_base_java",
      "$google_play_services_package:google_play_services_basement_java",
-     "$google_play_services_package:google_play_services_tasks_java",
 -    "$google_play_services_package:google_play_services_vision_common_java",
 -    "$google_play_services_package:google_play_services_vision_java",
-     "//base:base_java",
-     "//cc:cc_java",
-     "//chrome/android/features/keyboard_accessory:public_java",
---- a/chrome/android/features/cablev2_authenticator/BUILD.gn
-+++ b/chrome/android/features/cablev2_authenticator/BUILD.gn
-@@ -18,8 +18,6 @@ android_library("java") {
-     ":logging_java",
-     "$google_play_services_package:google_play_services_base_java",
-     "$google_play_services_package:google_play_services_tasks_java",
--    "$google_play_services_package:google_play_services_vision_common_java",
--    "$google_play_services_package:google_play_services_vision_java",
-     "//base:base_java",
-     "//chrome/browser/webauthn/android:java_resources",
-     "//content/public/android:content_java",
+     "//third_party/android_deps:protobuf_lite_runtime_java",
+     "//third_party/androidx:androidx_annotation_annotation_jvm_java",
+     "//third_party/androidx:androidx_appcompat_appcompat_java",

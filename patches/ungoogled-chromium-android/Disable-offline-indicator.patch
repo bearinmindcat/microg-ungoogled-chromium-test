@@ -1,17 +1,18 @@
-description: Disable OfflineIndicator
-author: Wengling Chen <feiyu2817@gmail.com>
+From: bearinmindcat <bearinmindcat@gmail.com>
+Date: Tue, 22 Jul 2026 00:00:00 +0000
+Subject: [PATCH] Disable offline indicator
 
+The OfflineIndicatorV2 feature flag was removed at 150; the controller is now
+gated only by a command-line switch, so disable its instantiation directly.
 ---
- chrome/browser/flags/android/chrome_feature_list.cc |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
---- a/chrome/browser/flags/android/chrome_feature_list.cc
-+++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -689,7 +689,7 @@ const base::Feature kInstanceSwitcher{"I
-                                       base::FEATURE_ENABLED_BY_DEFAULT};
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedRootUiCoordinator.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedRootUiCoordinator.java
+@@ -1825,7 +1825,7 @@
+                     }
+                 };
  
- const base::Feature kOfflineIndicatorV2{"OfflineIndicatorV2",
--                                        base::FEATURE_ENABLED_BY_DEFAULT};
-+                                        base::FEATURE_DISABLED_BY_DEFAULT};
- 
- const base::Feature kOfflineMeasurementsBackgroundTask{
-     "OfflineMeasurementsBackgroundTask", base::FEATURE_DISABLED_BY_DEFAULT};
+-        if (!CommandLine.getInstance()
++        if (false /* offline indicator disabled (ungoogled) */ && !CommandLine.getInstance()
+                 .hasSwitch(ContentSwitches.FORCE_ONLINE_CONNECTION_STATE_FOR_INDICATOR)) {
+             mOfflineIndicatorController =
+                     new OfflineIndicatorControllerV2(

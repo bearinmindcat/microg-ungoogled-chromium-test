@@ -3,50 +3,136 @@ Date: Fri, 1 Nov 2019 23:01:41 +0100
 Subject: Remove dependency on com.google.android.play
 
 ---
- chrome/android/BUILD.gn                          |    1 -
- chrome/browser/password_manager/android/BUILD.gn |    2 --
- third_party/android_deps/BUILD.gn                |    5 -----
- 3 files changed, 8 deletions(-)
+  chrome/android/BUILD.gn                            |  3 --
+  chrome/browser/ui/android/app_rating/BUILD.gn      |  4 --
+  .../ui/app_rating/AppRatingManagerImpl.java        | 55 +---------------------
+  third_party/android_deps/autorolled/BUILD.gn       | 26 ----------
+  4 files changed, 2 insertions(+), 86 deletions(-)
 
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -573,7 +573,6 @@ android_library("chrome_java") {
-     "//third_party/android_data_chart:android_data_chart_java",
-     "//third_party/android_deps:android_support_v7_appcompat_java",
-     "//third_party/android_deps:chromium_play_services_availability_java",
--    "//third_party/android_deps:com_google_android_play_core_java",
-     "//third_party/android_deps:com_google_code_findbugs_jsr305_java",
-     "//third_party/android_deps:com_google_guava_listenablefuture_java",
-     "//third_party/android_deps:dagger_java",
---- a/third_party/android_deps/BUILD.gn
-+++ b/third_party/android_deps/BUILD.gn
-@@ -1065,11 +1065,6 @@ if (!limit_android_deps) {
+@@ -2209,9 +2209,6 @@ if (_is_default_toolchain) {
+       deps += [
+         "//chrome/browser/ui/android/app_rating:play_review_aar_for_clank_java",
+       ]
+-    } else {
+-      deps +=
+-          [ "//third_party/android_deps:com_google_android_play_review_java" ]
+     }
+ 
+     if (dfmify_dev_ui) {
+--- a/chrome/browser/ui/android/app_rating/BUILD.gn
++++ b/chrome/browser/ui/android/app_rating/BUILD.gn
+@@ -60,8 +60,6 @@ android_library("impl_java") {
+   ]
+   if (enable_chrome_android_internal) {
+     deps += [ ":play_review_aar_for_clank_java" ]
+-  } else {
+-    deps += [ "//third_party/android_deps:com_google_android_play_review_java" ]
    }
+ }
  
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
--  android_aar_prebuilt("com_google_android_play_core_java") {
--    aar_path = "libs/com_google_android_play_core/core-1.10.0.aar"
--    info_path =
--        "libs/com_google_android_play_core/com_google_android_play_core.info"
--  }
+@@ -95,7 +93,5 @@ robolectric_library("junit") {
+   ]
+   if (enable_chrome_android_internal) {
+     deps += [ ":play_review_aar_for_clank_java" ]
+-  } else {
+-    deps += [ "//third_party/android_deps:com_google_android_play_review_java" ]
+   }
+ }
+--- a/chrome/browser/ui/android/app_rating/java/src/org/chromium/chrome/browser/ui/app_rating/AppRatingManagerImpl.java
++++ b/chrome/browser/ui/android/app_rating/java/src/org/chromium/chrome/browser/ui/app_rating/AppRatingManagerImpl.java
+@@ -6,17 +6,6 @@ package org.chromium.chrome.browser.ui.app_rating;
  
-   # This is generated, do not edit. Update BuildConfigGenerator.groovy instead.
+ import android.app.Activity;
  
---- a/chrome/browser/password_manager/android/BUILD.gn
-+++ b/chrome/browser/password_manager/android/BUILD.gn
-@@ -56,7 +56,6 @@ android_library("java") {
-     ":android_backend_java_enums",
-     ":java_resources",
-     ":settings_interface_java",
--    "$google_play_services_package:google_play_services_basement_java",
-     "//base:base_java",
-     "//chrome/browser/device_reauth/android:java",
-     "//chrome/browser/flags:java",
-@@ -129,7 +128,6 @@ junit_binary("password_manager_junit_tes
-     ":android_backend_java_enums",
-     ":java",
-     ":settings_interface_java",
--    "$google_play_services_package:google_play_services_basement_java",
-     "//base:base_java",
-     "//base:base_java_test_support",
-     "//base:base_junit_test_support",
+-import androidx.annotation.VisibleForTesting;
+-
+-import com.google.android.gms.tasks.Task;
+-import com.google.android.play.core.review.ReviewException;
+-import com.google.android.play.core.review.ReviewInfo;
+-import com.google.android.play.core.review.ReviewManager;
+-import com.google.android.play.core.review.ReviewManagerFactory;
+-import com.google.android.play.core.review.model.ReviewErrorCode;
+-
+-import org.chromium.base.ContextUtils;
+-import org.chromium.base.TimeUtils;
+ import org.chromium.build.annotations.NullMarked;
+ import org.chromium.build.annotations.ServiceImpl;
+ 
+@@ -24,50 +13,10 @@ import org.chromium.build.annotations.ServiceImpl;
+ @NullMarked
+ @ServiceImpl(AppRatingManager.class)
+ public class AppRatingManagerImpl implements AppRatingManager {
+-    private final ReviewManager mReviewManager;
+-
+-    public AppRatingManagerImpl() {
+-        mReviewManager = ReviewManagerFactory.create(ContextUtils.getApplicationContext());
+-    }
+-
+-    /**
+-     * Constructor for testing.
+-     *
+-     * @param reviewManager The ReviewManager to use.
+-     */
+-    @VisibleForTesting
+-    AppRatingManagerImpl(ReviewManager reviewManager) {
+-        mReviewManager = reviewManager;
+-    }
++    public AppRatingManagerImpl() {}
+ 
+     @Override
+     public void requestAndShowReviewFlow(Activity activity, Runnable onComplete) {
+-        Task<ReviewInfo> request = mReviewManager.requestReviewFlow();
+-        request.addOnCompleteListener(
+-                task -> {
+-                    if (task.isSuccessful()) {
+-                        ReviewInfo reviewInfo = task.getResult();
+-                        long startTime = TimeUtils.elapsedRealtimeMillis();
+-                        Task<Void> flow = mReviewManager.launchReviewFlow(activity, reviewInfo);
+-                        flow.addOnCompleteListener(
+-                                flowTask -> {
+-                                    long duration = TimeUtils.elapsedRealtimeMillis() - startTime;
+-                                    AppRatingPromoMetrics.recordInteractionDuration(duration);
+-                                    AppRatingPromoMetrics.recordReviewStatus(
+-                                            ReviewErrorCode.NO_ERROR);
+-                                    onComplete.run();
+-                                });
+-                    } else {
+-                        Exception exception = task.getException();
+-                        int errorCode = Integer.MIN_VALUE; // Default unknown error
+-                        if (exception instanceof ReviewException) {
+-                            @ReviewErrorCode
+-                            int reviewErrorCode = ((ReviewException) exception).getErrorCode();
+-                            errorCode = reviewErrorCode;
+-                        }
+-                        AppRatingPromoMetrics.recordReviewStatus(errorCode);
+-                        onComplete.run();
+-                    }
+-                });
++        onComplete.run();
+     }
+ }
+--- a/third_party/android_deps/autorolled/BUILD.gn
++++ b/third_party/android_deps/autorolled/BUILD.gn
+@@ -151,20 +151,6 @@ template("define_autorolled_targets") {
+       }
+     }
+
+-    # This is generated, do not edit. Update BuildConfigGenerator.groovy
+-    # instead.
+-    android_aar_prebuilt("com_google_android_play_review_java") {
+-      aar_path =
+-          "autorolled/cipd/libs/com_google_android_play_review/review.aar"
+-      info_path = "autorolled/committed/libs/com_google_android_play_review/com_google_android_play_review.info"
+-      enable_bytecode_checks = false
+-      deps = [
+-        "$google_play_services_package:google_play_services_basement_java",
+-        "$google_play_services_package:google_play_services_tasks_java",
+-        "//third_party/android_deps:com_google_android_play_core_common_java",
+-      ]
+-    }
+-
+     # This is generated, do not edit. Update BuildConfigGenerator.groovy
+     # instead.
+     android_aar_prebuilt("com_google_ar_impress_java") {
