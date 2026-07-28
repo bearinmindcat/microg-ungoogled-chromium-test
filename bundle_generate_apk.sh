@@ -8,9 +8,9 @@ source "${SCRIPT_PATH}/.build_config"
 
 KEYSTORE=$PWD/../../uc_keystore/uc-release-key.keystore
 KEYSTORE_PASS=$PWD/../../uc_keystore/keystore_pass
-APKSIGNER=$PWD/third_party/android_sdk/public/build-tools/31.0.0/apksigner
+APKSIGNER=$PWD/third_party/android_sdk/public/build-tools/37.0.0/apksigner
 BUNDLETOOL=$PWD/build/android/gyp/bundletool.py
-AAPT2=$PWD/third_party/android_build_tools/aapt2/aapt2
+AAPT2=$PWD/third_party/android_build_tools/aapt2/cipd/aapt2
 
 # Argument parser from https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash/29754866#29754866
 # -allow a command to fail with !’s side effect on errexit
@@ -84,8 +84,9 @@ fi
 
 case "$TARGET" in
     "$chrome_modern_target")
-        FILENAME="ChromeModernPublic"
-        FILENAME_OUT="ChromeModernPublic"
+        # chrome_public_bundle outputs ChromePublic.aab at Chromium 150
+        FILENAME="ChromePublic"
+        FILENAME_OUT="ChromePublic"
         ;;
     "$trichrome_chrome_bundle_target")
         FILENAME="TrichromeChrome"

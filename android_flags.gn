@@ -1,22 +1,14 @@
 android_channel="stable"
-android_ndk_root = "//third_party/android_ndk"
-android_ndk_version = "r23"
-android_ndk_major_version = 23
-android_sdk_build_tools_version="31.0.0"
-android_sdk_version="31"
 cc_wrapper="ccache"
-dfmify_dev_ui=false
 disable_android_lint=true
-disable_autofill_assistant_dfm=true
-disable_tab_ui_dfm=true
-enable_gvr_services=false
 enable_swiftshader=false
 exclude_unwind_tables=false
 ffmpeg_branding="Chrome"
-limit_android_deps = false
-is_chromecast=false
+limit_android_deps=false
 is_clang=true
 proprietary_codecs=true
 rtc_build_examples=false
 target_os="android"
-use_gnome_keyring=false
+enable_cardboard = false
+
+use_mlkit_for_aicore = false
