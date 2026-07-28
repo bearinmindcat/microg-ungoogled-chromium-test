@@ -3,17 +3,27 @@ Date: Fri, 22 Jun 2018 17:16:07 +0200
 Subject: kill TOS and metrics opt-out
 
 ---
- chrome/android/java/res/layout/fre_tosanduma.xml |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/fullscreen_signin/FullscreenSigninMediator.java | 4 ++--
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
---- a/chrome/android/java/res/layout/fre_tosanduma.xml
-+++ b/chrome/android/java/res/layout/fre_tosanduma.xml
-@@ -83,7 +83,7 @@
-                         android:layout_marginTop="@dimen/fre_vertical_spacing"
-                         android:layout_marginBottom="@dimen/fre_tos_bottom_margin"
-                         android:lineSpacingMultiplier="1.4"
--                        android:textAppearance="@style/TextAppearance.TextMedium.Primary" />
-+                        android:textAppearance="@style/TextAppearance.TextMedium.Primary"  android:visibility="gone" />
- 
-                     <CheckBox
-                         android:id="@+id/send_report_checkbox"
+--- a/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/fullscreen_signin/FullscreenSigninMediator.java
++++ b/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/fullscreen_signin/FullscreenSigninMediator.java
+@@ -308,8 +308,7 @@ public class FullscreenSigninMediator
+         // 1. Update all fields.
+         mIsSigninSupported = isSigninSupported(profile);
+         if (hasPolicies) {
+-            mAllowMetricsAndCrashUploading =
+-                    mPrivacyPreferencesManager.isUsageAndCrashReportingPermittedByPolicy();
++            mAllowMetricsAndCrashUploading = false;
+             mIsSigninForcedByPolicy = ForcedSigninController.isForcedSigninPolicyEnabled();
+             mForcedSigninToken =
+                     mIsSigninForcedByPolicy
+@@ -914,7 +913,7 @@ public class FullscreenSigninMediator
+      * line has a TOS link. Second line appears only if MetricsReporting is not disabled by policy.
+      */
+     private @Nullable SpannableString getFooterString(boolean isMetricsReportingDisabled) {
+-        if (!mDelegate.shouldDisplayFooterText()) {
++        if (true) {
+             return null;
+         }
+         String footerString = mContext.getString(R.string.signin_fre_footer_tos);

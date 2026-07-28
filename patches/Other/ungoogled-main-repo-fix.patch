@@ -1,13 +1,12 @@
-description: modify GN flags and pruning list
-author: Wengling Chen <feiyu2817@gmail.com>
+description: modify GN flags and pruning list for the Android build
+author: originally Wengling Chen <feiyu2817@gmail.com>; regenerated against ungoogled-chromium 150.0.7871.x (2026-07-10)
 
 ---
- flags.gn     | 1 -
- 1 files changed, 1 deletions(-)
- 
+diff --git a/ungoogled-chromium/flags.gn b/ungoogled-chromium/flags.gn
+index 8394b02..40909d5 100644
 --- a/ungoogled-chromium/flags.gn
 +++ b/ungoogled-chromium/flags.gn
-@@ -14,7 +14,6 @@ enable_remoting=false
+@@ -7,7 +7,6 @@ enable_remoting=false
  enable_reporting=false
  enable_service_discovery=false
  enable_widevine=true
@@ -15,13 +14,24 @@ author: Wengling Chen <feiyu2817@gmail.com>
  google_api_key=""
  google_default_client_id=""
  google_default_client_secret=""
+diff --git a/ungoogled-chromium/pruning.list b/ungoogled-chromium/pruning.list
+index 3382d5b..8c37145 100644
 --- a/ungoogled-chromium/pruning.list
 +++ b/ungoogled-chromium/pruning.list
-@@ -17462,7 +17462,6 @@ third_party/pyelftools/test/testfiles_for_unittests/simple_gcc.elf.arm
+@@ -2126,7 +2126,6 @@ third_party/angle/third_party/glmark2/src/data/models/asteroid-low.3ds
+ third_party/angle/third_party/glmark2/src/data/models/cat.3ds
+ third_party/angle/third_party/glmark2/src/data/models/cube.3ds
+ third_party/angle/third_party/glmark2/src/data/models/horse.3ds
+-third_party/angle/third_party/r8/custom_d8.jar
+ third_party/aria-practices/src/common/utility/aria-taxonomy.xmi.zargo
+ third_party/aria-practices/src/content/patterns/slider/examples/images/max-arrow.paint
+ third_party/blink/renderer/bindings/core/v8/serialization/fuzz_corpus/blink-0bb59816-x86
+@@ -12231,8 +12230,6 @@ third_party/pyelftools/test/testfiles_for_unittests/simple_gcc.elf.arm
  third_party/pywebsocket3/src/test/cert/client_cert.p12
  third_party/quic_trace/src/examples/example.json.gz
  third_party/quic_trace/src/examples/example.qtr
 -third_party/r8/custom_d8.jar
- third_party/skia/experimental/wasm-skp-debugger/debugger/anim.mskp
- third_party/skia/experimental/wasm-skp-debugger/debugger/sample.skp
- third_party/skia/modules/canvaskit/tests/assets/Roboto-Regular.otf
+-third_party/r8/custom_r8.jar
+ third_party/rust/chromium_crates_io/vendor/cxx-v1/.cache/clangd/index/cxx.h.750D92B1F543BF56.idx
+ third_party/rust/chromium_crates_io/vendor/fdeflate-v0_3/tests/input-chunking-sensitivity-example1.zz
+ third_party/rust/chromium_crates_io/vendor/fdeflate-v0_3/tests/input-chunking-sensitivity-example2.zz
