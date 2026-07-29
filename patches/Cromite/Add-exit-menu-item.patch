@@ -1,3 +1,13 @@
+From: Serg <serg.zhukovsky@gmail.com>
+Date: Tue, 31 Jan 2017 22:12:27 -0500
+Subject: Add exit menu item
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
+
+Corrected Exit functionality
+
+License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
+---
 diff --git a/chrome/android/java/res/values/ids.xml b/chrome/android/java/res/values/ids.xml
 --- a/chrome/android/java/res/values/ids.xml
 +++ b/chrome/android/java/res/values/ids.xml

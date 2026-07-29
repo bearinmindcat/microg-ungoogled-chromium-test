@@ -1,3 +1,5 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
 diff --git a/third_party/android_deps/autorolled/BUILD.gn b/third_party/android_deps/autorolled/BUILD.gn
 --- a/third_party/android_deps/autorolled/BUILD.gn
 +++ b/third_party/android_deps/autorolled/BUILD.gn

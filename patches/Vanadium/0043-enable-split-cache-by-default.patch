@@ -1,11 +1,10 @@
+From 560f1408b7556b8211458d81f9b735d02a30bc4b Mon Sep 17 00:00:00 2001
 From: Daniel Micay <danielmicay@gmail.com>
-Date: Mon, 26 Aug 2019 11:37:39 -0400
-Subject: enable split cache and partitioned connections by default
-
+Date: Wed, 23 Dec 2020 06:00:50 -0500
+Subject: [PATCH 43/78] enable split cache by default
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
 ---
- net/base/features.cc |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
 --- a/net/base/features.cc
 +++ b/net/base/features.cc
 @@ -136,13 +136,13 @@

@@ -1,3 +1,18 @@
+From: csagan5 <32685696+csagan5@users.noreply.github.com>
+Date: Wed, 1 Aug 2018 09:19:40 +0200
+Subject: Add bookmark import/export actions
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
+
+Add bookmark import/export actions in bookmarks activity and page
+Reduce permissions needed for bookmarks import/export
+Completely remove contacts picker permission from the file dialog
+
+Requires: Adds-support-for-writing-URIs.patch
+Requires: Restore-BookmarkToolbar-setCurrentFolder.patch
+
+License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
+---
 diff --git a/chrome/android/java/res/menu/bookmark_toolbar_menu_improved.xml b/chrome/android/java/res/menu/bookmark_toolbar_menu_improved.xml
 --- a/chrome/android/java/res/menu/bookmark_toolbar_menu_improved.xml
 +++ b/chrome/android/java/res/menu/bookmark_toolbar_menu_improved.xml

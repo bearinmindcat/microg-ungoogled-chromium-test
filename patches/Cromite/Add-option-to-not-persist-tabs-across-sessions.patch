@@ -1,15 +1,11 @@
 From: csagan5 <32685696+csagan5@users.noreply.github.com>
 Date: Sat, 7 Sep 2019 15:07:42 +0200
 Subject: Add option to not persist tabs across sessions
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
 
+License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
- .../android/java/res/xml/privacy_preferences.xml  |  5 +++++
- .../chrome/browser/ChromeTabbedActivity.java      |  5 ++++-
- .../browser/privacy/settings/PrivacySettings.java | 15 ++++++++++++++-
- .../browser/tab_group_sync/StartupHelper.java     |  6 ++++++
- .../ui/android/strings/android_chrome_strings.grd |  6 ++++++
- 5 files changed, 35 insertions(+), 2 deletions(-)
-
 diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/android/java/res/xml/privacy_preferences.xml
 --- a/chrome/android/java/res/xml/privacy_preferences.xml
 +++ b/chrome/android/java/res/xml/privacy_preferences.xml

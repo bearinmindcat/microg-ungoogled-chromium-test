@@ -1,3 +1,10 @@
+From 95ae23e1aa98ffbfe2a384cf88742a135e0ac030 Mon Sep 17 00:00:00 2001
+From: Daniel Micay <danielmicay@gmail.com>
+Date: Thu, 4 Jul 2019 19:08:52 -0400
+Subject: [PATCH] disable media router by default
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
+---
 diff --git a/chrome/browser/media/router/media_router_feature.cc b/chrome/browser/media/router/media_router_feature.cc
 --- a/chrome/browser/media/router/media_router_feature.cc
 +++ b/chrome/browser/media/router/media_router_feature.cc

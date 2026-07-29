@@ -1,3 +1,8 @@
+description: Add flag for save-data-header
+author: Wengling Chen <feiyu2817@gmail.com>
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
+---
 diff --git a/chrome/browser/ungoogled_flag_entries.h b/chrome/browser/ungoogled_flag_entries.h
 --- a/chrome/browser/ungoogled_flag_entries.h
 +++ b/chrome/browser/ungoogled_flag_entries.h

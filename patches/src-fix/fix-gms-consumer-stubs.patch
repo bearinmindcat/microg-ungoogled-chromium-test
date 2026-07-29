@@ -1,3 +1,5 @@
+author: bearinmindcat <bearincrypto@gmail.com>
+
 diff --git a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java
 --- a/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java
 +++ b/chrome/browser/password_manager/android/java/src/org/chromium/chrome/browser/password_manager/GmsUpdateLauncher.java

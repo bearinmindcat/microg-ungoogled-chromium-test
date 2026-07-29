@@ -1,9 +1,7 @@
-From: bearinmindcat <bearinmindcat@gmail.com>
-Date: Tue, 22 Jul 2026 00:00:00 +0000
-Subject: [PATCH] Disable offline indicator
-
-The OfflineIndicatorV2 feature flag was removed at 150; the controller is now
-gated only by a command-line switch, so disable its instantiation directly.
+description: Disable OfflineIndicator
+author: Wengling Chen <feiyu2817@gmail.com>
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
 ---
 --- a/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedRootUiCoordinator.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/tabbed_mode/TabbedRootUiCoordinator.java

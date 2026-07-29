@@ -1,3 +1,11 @@
+From: uazo <uazo@users.noreply.github.com>
+Date: Sun, 5 May 2024 09:34:39 +0000
+Subject: Add option to force tablet UI
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
+
+License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
+---
 diff --git a/chrome/android/java/res/values/dimens.xml b/chrome/android/java/res/values/dimens.xml
 --- a/chrome/android/java/res/values/dimens.xml
 +++ b/chrome/android/java/res/values/dimens.xml

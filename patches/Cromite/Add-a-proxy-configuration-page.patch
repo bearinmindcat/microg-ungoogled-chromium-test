@@ -1,3 +1,23 @@
+From: csagan5 <32685696+csagan5@users.noreply.github.com>
+Date: Thu, 29 Mar 2018 00:43:32 +0200
+Subject: Add a proxy configuration page
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
+
+Accessible from proxy settings and chrome://proxy
+Allows to use a PAC script URL, automatic configuration and explicit proxy settings.
+Offer auto-complete for the proxy page URL.
+Store proxy settings in LocalState instead of Profile, so that proxy is used for SimpleURLLoaders as well;
+this implementation is the same as the one in ChromeOS which gets proxy information from the LocalState
+for the system network context; this is strictly not correct on Android because the network context is
+never connected to any user profile and only gets proxy information from the system.
+Existing settings on Profile are migrated to LocalState on startup.
+Enable the support for multiple proxy chain via the bracketed [] sintax
+
+Credits to @uazo for the LocalState integration.
+
+License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
+---
 diff --git a/chrome/android/java/res/values/values.xml b/chrome/android/java/res/values/values.xml
 --- a/chrome/android/java/res/values/values.xml
 +++ b/chrome/android/java/res/values/values.xml

@@ -1,6 +1,7 @@
-description: modify GN flags and pruning list for the Android build
-author: originally Wengling Chen <feiyu2817@gmail.com>; regenerated against ungoogled-chromium 150.0.7871.x (2026-07-10)
-
+description: modify GN flags and pruning list
+author: Wengling Chen <feiyu2817@gmail.com>
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Fri, 10 Jul 2026
 ---
 diff --git a/ungoogled-chromium/flags.gn b/ungoogled-chromium/flags.gn
 index 8394b02..40909d5 100644

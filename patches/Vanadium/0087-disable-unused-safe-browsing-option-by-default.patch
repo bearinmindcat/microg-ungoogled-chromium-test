@@ -3,10 +3,11 @@ From: Daniel Micay <danielmicay@gmail.com>
 Date: Thu, 12 Mar 2020 13:01:02 -0400
 Subject: [PATCH] disable unused safe browsing option by default
 
+Safe Browsing is currently a no-op due to the lack of Play Services, and
+support for using the local database backend hasn't been implemented.
+Various changes would be needed to make it available and to make sure
+that privacy is preserved.
 ---
-  components/safe_browsing/core/common/safe_browsing_prefs.cc | 2 +-
-  1 file changed, 1 insertion(+), 1 deletion(-)
-
 diff --git a/components/safe_browsing/core/common/safe_browsing_prefs.cc b/components/safe_browsing/core/common/safe_browsing_prefs.cc
 index 3921d01..624a214 100644
 --- a/components/safe_browsing/core/common/safe_browsing_prefs.cc

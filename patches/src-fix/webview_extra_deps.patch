@@ -1,3 +1,8 @@
+description: somehow webview is missing files from chrome/browser in v88
+author: Wengling Chen <feiyu2817@gmail.com>
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Tue, 22 Jul 2026
+---
 diff --git a/android_webview/lib/BUILD.gn b/android_webview/lib/BUILD.gn
 --- a/android_webview/lib/BUILD.gn
 +++ b/android_webview/lib/BUILD.gn

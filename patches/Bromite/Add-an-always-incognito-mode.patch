@@ -1,12 +1,13 @@
-From: bearinmindcat <bearinmindcat@gmail.com>
-Date: Sun, 20 Jul 2026 00:00:00 +0000
-Subject: [PATCH] Add an always-incognito mode
+From: Ryan Archer <ryan.bradley.archer@gmail.com>
+Date: Wed, 2 Aug 2017 01:41:28 -0400
+Subject: Add an always-incognito mode
+author: bearinmindcat <bearincrypto@gmail.com>
+date: Sun, 20 Jul 2026
 
-Adds an "Open links in incognito tabs always" toggle to Privacy settings.
-When enabled, link navigations and new tabs in non-incognito tabs are
-reopened in incognito tabs via a TabObserver (AlwaysIncognitoLinkInterceptor)
-attached to every non-incognito tab by ChromeTabCreator. Ported from
-wchen v99 / Bromite; self-contained against Chromium 150 APIs.
+More specifically, add a preference that causes all new tabs and all
+clicked links to launch as incognito.
+Make sure initial incognito status is correctly recognized.
+Enable incognito custom tabs and fix crashes for incognito/custom tab intents (credits to @uazo)
 ---
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/AlwaysIncognitoLinkInterceptor.java b/chrome/android/java/src/org/chromium/chrome/browser/AlwaysIncognitoLinkInterceptor.java
 new file mode 100644
