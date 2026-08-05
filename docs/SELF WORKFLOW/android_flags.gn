@@ -1,0 +1,14 @@
+android_channel="stable"
+cc_wrapper="ccache"
+disable_android_lint=true
+enable_swiftshader=false
+exclude_unwind_tables=false
+ffmpeg_branding="Chrome"
+limit_android_deps=false
+is_clang=true
+proprietary_codecs=true
+rtc_build_examples=false
+target_os="android"
+enable_cardboard = false
+
+use_mlkit_for_aicore = false

@@ -1,0 +1,78 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'Architecture'
+        required: true
+        default: 'arm64'
+        type: choice
+        options: [arm64, arm]
+      chromium_source:
+        description: 'Chromium source'
+        required: true
+        default: 'googlesource'
+        type: choice
+        options: ['googlesource', 'github']
+      resume:
+        description: 'Resume previous build'
+        required: true
+        default: 'no'
+        type: choice
+        options: ['no', 'yes']
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: self-hosted
+    timeout-minutes: 1440
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          clean: false
+
+      - name: Resolve version
+        run: |
+          . ./.build_config
+          echo "VERSION=${chromium_version}-${ungoogled_chromium_android_revision}" >> "$GITHUB_ENV"
+
+      - name: Stage keystore from secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+        run: |
+          if [ -n "${KEYSTORE_B64:-}" ]; then
+            mkdir -p "$RUNNER_TEMP/ks"
+            chmod 700 "$RUNNER_TEMP/ks"
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/ks/release.jks"
+            printf '%s' "$KEYSTORE_PASS" > "$RUNNER_TEMP/ks/pass"
+            chmod 600 "$RUNNER_TEMP/ks"/*
+            echo "UGC_KEYSTORE=$RUNNER_TEMP/ks/release.jks"   >> "$GITHUB_ENV"
+            echo "UGC_KEYSTORE_PASSFILE=$RUNNER_TEMP/ks/pass" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          CHROMIUM_SOURCE: ${{ inputs.chromium_source == 'github' && 'https://github.com/chromium/chromium.git' || 'https://chromium.googlesource.com/chromium/src.git' }}
+        run: ./build.sh ${{ inputs.resume == 'yes' && '--resume' || '' }} --arch "${{ inputs.architecture }}" --target chrome_modern_target
+
+      - name: Sign and assemble
+        run: build/release.sh "${{ inputs.architecture }}"
+
+      - name: Attest build provenance
+        if: ${{ inputs.resume == 'no' }}
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            releases/${{ env.VERSION }}/ChromePublic_${{ inputs.architecture }}.apk
+            releases/${{ env.VERSION }}/ChromePublic_${{ inputs.architecture }}.aab
+
+      - name: Remove staged keystore
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/ks"

@@ -96,17 +96,20 @@ Pre-built apks are named as `{BUILD_TARGET}_{CPU_ARCH}.apk`, where:
 * Make sure you have enough disk space and memory to build chromium
 * enter repo directory and run `./build.sh`.
 
-Build time dependencies (*package names as in Debian. Other distributions may have different package names*):
+Build time dependencies:
 
 <details>
   <summary>required packages</summary>
-  
+
+  **Debian**
+
   ```
       bison
       bzip2
       clang
       curl
       default-jdk
+      file
       flex
       git
       gnupg2
@@ -124,8 +127,8 @@ Build time dependencies (*package names as in Debian. Other distributions may ha
       libxkbcommon-dev
       lld
       llvm
+      lsb-release
       make
-      ninja-build
       nodejs
       npm
       patch
@@ -138,7 +141,92 @@ Build time dependencies (*package names as in Debian. Other distributions may ha
       wget
       yasm
   ```
+
+  **Fedora**
+
+  ```
+      bison
+      bzip2
+      clang
+      curl
+      dbus-devel
+      expat-devel
+      file
+      flex
+      git
+      glib2-devel
+      glibc-devel.i686
+      glibc.i686
+      gnupg2
+      gperf
+      java-latest-openjdk-devel
+      krb5-devel
+      libdrm-devel
+      libgcc.i686
+      libstdc++.i686
+      libuuid-devel
+      libxkbcommon-devel
+      lld
+      llvm
+      make
+      nodejs
+      npm
+      nss-devel
+      patch
+      perl
+      python3
+      redhat-lsb-core
+      rsync
+      tar
+      unzip
+      wget
+      yasm
+  ```
+
+  **Arch**
+
+  ```
+      bison
+      bzip2
+      clang
+      curl
+      dbus
+      expat
+      file
+      flex
+      git
+      glib2
+      gnupg
+      gperf
+      jdk-openjdk
+      krb5
+      lib32-gcc-libs
+      lib32-glibc
+      libdrm
+      libxkbcommon
+      lld
+      llvm
+      lsb-release
+      make
+      nodejs
+      npm
+      nss
+      patch
+      perl
+      python
+      rsync
+      tar
+      unzip
+      util-linux
+      wget
+      yasm
+  ```
+
+  The `lib32-*` packages require the `multilib` repository, which is disabled by default —
+  uncomment the `[multilib]` section in `/etc/pacman.conf` and run `pacman -Sy` first.
 </details>
+
+*Builds are untested on other distros besides Debian.*
 
 For a more customized building process, see building instructions from [the original repo](https://github.com/ungoogled-software/ungoogled-chromium/blob/master/docs/building.md) or [Cromite](https://github.com/uazo/cromite/blob/master/docs/HOW_TO_BUILD.md).
 
