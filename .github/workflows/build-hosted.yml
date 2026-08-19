@@ -1,0 +1,75 @@
+name: release build
+
+on:
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'architecture'
+        required: true
+        default: 'all'
+        type: choice
+        options: [all, arm64, arm]
+      chromium_source:
+        description: 'chromium source'
+        required: true
+        default: 'github'
+        type: choice
+        options: ['github', 'googlesource']
+      release_name:
+        description: 'release tag (blank = no release)'
+        required: false
+        default: ''
+        type: string
+      source_run_id:
+        description: 'run id (blank = no resume)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: build-hosted-${{ inputs.architecture }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: ${{ inputs.architecture == 'all' && fromJSON('["arm64","arm"]') || fromJSON(format('["{0}"]', inputs.architecture)) }}
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/build-steps.yml
+    secrets: inherit
+    with:
+      architecture: ${{ matrix.architecture }}
+      chromium_source: ${{ inputs.chromium_source }}
+      source_run_id: ${{ inputs.source_run_id }}
+
+  release:
+    needs: build
+    if: ${{ inputs.release_name != '' && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: release-*
+          path: rel
+      - shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ inputs.release_name }}
+        run: |
+          files=()
+          while IFS= read -r f; do files+=("$f"); done < <(find rel -name 'ChromePublic_*.apk' -o -name 'ChromePublic_arm64.aab')
+          [ "${#files[@]}" -gt 0 ] || { echo "FATAL: no release files found"; exit 1; }
+          printf 'releasing %s with:\n' "$NAME"
+          printf '  %s\n' "${files[@]}"
+          gh release create "$NAME" "${files[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$NAME" \
+              --notes "Please see [CHANGELOG](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/master/CHANGELOG.md) for latest updates."

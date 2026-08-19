@@ -1,0 +1,202 @@
+name: build-steps.yml
+
+on:
+  workflow_call:
+    inputs:
+      architecture:
+        required: true
+        type: string
+      chromium_source:
+        required: true
+        type: string
+      source_run_id:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  prep:
+    if: inputs.source_run_id == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Prepare runner
+        shell: bash
+        env:
+          UGC_WORK: /mnt/ugc
+        run: .github/scripts/hosted-prepare.sh
+      - name: Fetch, patch and configure
+        shell: bash
+        env:
+          UGC_WORK: /mnt/ugc
+          DEBIAN_FRONTEND: noninteractive
+          CHROMIUM_SOURCE: ${{ inputs.chromium_source == 'github' && 'https://github.com/chromium/chromium.git' || 'https://chromium.googlesource.com/chromium/src.git' }}
+        run: >
+          .github/scripts/hosted-build.sh --install-deps --prepare-only
+          --arch "${{ inputs.architecture }}"
+          --target chrome_modern_target
+      - name: Pack build tree
+        shell: bash
+        env:
+          UGC_WORK: /mnt/ugc
+        run: .github/scripts/hosted-export.sh
+      - name: Save build tree
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: build-tree-${{ inputs.architecture }}
+          path: build-tree.tar.zst
+          retention-days: 1
+          overwrite: true
+          compression-level: 0
+
+  part-01:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: prep
+    if: ${{ !cancelled() && (needs.prep.result == 'success' || needs.prep.result == 'skipped') }}
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          source_run_id: ${{ inputs.source_run_id }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+
+  part-02:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: part-01
+    if: needs.part-01.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+
+  part-03:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: part-02
+    if: needs.part-02.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+
+  part-04:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: part-03
+    if: needs.part-03.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+
+  part-05:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: part-04
+    if: needs.part-04.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+
+  part-06:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: part-05
+    if: needs.part-05.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+
+  part-07:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: part-06
+    if: needs.part-06.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+
+  part-08:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    needs: part-07
+    if: needs.part-07.outputs.status == 'running'
+    outputs:
+      status: ${{ steps.stage.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - id: stage
+        uses: ./.github/actions/build-stage
+        with:
+          architecture: ${{ inputs.architecture }}
+          chromium_source: ${{ inputs.chromium_source }}
+          keystore_b64: ${{ secrets.KEYSTORE_B64 }}
+          keystore_pass: ${{ secrets.KEYSTORE_PASS }}
+  attest:
+    needs: [part-01, part-02, part-03, part-04, part-05, part-06, part-07, part-08]
+    if: ${{ always() && contains(needs.*.outputs.status, 'completed') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-${{ inputs.architecture }}
+          path: rel
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-path: |
+            rel/ChromePublic_${{ inputs.architecture }}.apk
+            rel/ChromePublic_${{ inputs.architecture }}.aab

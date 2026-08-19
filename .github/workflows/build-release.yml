@@ -1,29 +1,34 @@
-name: Build
+name: (selfhost dev build)
 
 on:
   workflow_dispatch:
     inputs:
       architecture:
-        description: 'Architecture'
+        description: 'architecture'
         required: true
         default: 'arm64'
         type: choice
         options: [arm64, arm]
       chromium_source:
-        description: 'Chromium source'
+        description: 'chromium source'
         required: true
-        default: 'googlesource'
+        default: 'github'
         type: choice
-        options: ['googlesource', 'github']
+        options: ['github', 'googlesource']
+      release_name:
+        description: 'release tag (blank = no release)'
+        required: false
+        default: ''
+        type: string
       resume:
-        description: 'Resume previous build'
+        description: 'resume build'
         required: true
         default: 'no'
         type: choice
         options: ['no', 'yes']
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   attestations: write
 
@@ -32,7 +37,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 1440
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           clean: false
 
@@ -67,11 +72,31 @@ jobs:
 
       - name: Attest build provenance
         if: ${{ inputs.resume == 'no' }}
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
           subject-path: |
             releases/${{ env.VERSION }}/ChromePublic_${{ inputs.architecture }}.apk
             releases/${{ env.VERSION }}/ChromePublic_${{ inputs.architecture }}.aab
+
+      - name: Create release
+        if: ${{ inputs.release_name != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_name }}
+          ARCH: ${{ inputs.architecture }}
+        run: |
+          REL="releases/${VERSION}"
+          files=("$REL/ChromePublic_${ARCH}.apk")
+          [ "$ARCH" = arm64 ] && files+=("$REL/ChromePublic_arm64.aab")
+          for f in "${files[@]}"; do [ -f "$f" ] || { echo "FATAL: missing $f"; exit 1; }; done
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          body="Please see [CHANGELOG](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/master/CHANGELOG.md) for latest updates."
+          rid=$(curl -fsS -H "Authorization: Bearer ${GH_TOKEN}" -X POST "$api/releases"                   -d "{\"tag_name\":\"$TAG\",\"name\":\"$TAG\",\"body\":\"$body\"}"                   | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' 2>/dev/null)             || rid=$(curl -fsS -H "Authorization: Bearer ${GH_TOKEN}" "$api/releases/tags/$TAG"                   | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+          [ -n "$rid" ] || { echo "FATAL: could not create or find release $TAG"; exit 1; }
+          for f in "${files[@]}"; do
+              curl -fsS -H "Authorization: Bearer ${GH_TOKEN}" -H "Content-Type: application/octet-stream"                   --data-binary @"$f"                   "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${rid}/assets?name=$(basename "$f")" >/dev/null
+              echo "uploaded $(basename "$f") to $TAG"
+          done
 
       - name: Remove staged keystore
         if: always()

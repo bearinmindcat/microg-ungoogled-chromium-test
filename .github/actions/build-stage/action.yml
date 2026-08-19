@@ -1,0 +1,109 @@
+name: 'Build stage'
+description: 'One relay stage: reclaim disk, restore the tree, build within a time budget, save the tree or release'
+
+inputs:
+  architecture:
+    required: true
+  chromium_source:
+    required: true
+  source_run_id:
+    required: false
+    default: ''
+  keystore_b64:
+    required: false
+  keystore_pass:
+    required: false
+
+outputs:
+  status:
+    value: ${{ steps.build.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare runner
+      shell: bash
+      env:
+        UGC_WORK: /mnt/ugc
+      run: .github/scripts/hosted-prepare.sh
+
+    - name: Restore build tree
+      shell: bash
+      env:
+        UGC_WORK: /mnt/ugc
+        ARCH: ${{ inputs.architecture }}
+        SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        GH_TOKEN: ${{ github.token }}
+      run: .github/scripts/hosted-import.sh
+
+    - name: Build
+      id: build
+      shell: bash
+      env:
+        UGC_WORK: /mnt/ugc
+        NINJA_TIMEOUT: '16200s'
+        NINJA_JOBS: '4'
+        DEBIAN_FRONTEND: noninteractive
+        CHROMIUM_SOURCE: ${{ inputs.chromium_source == 'github' && 'https://github.com/chromium/chromium.git' || 'https://chromium.googlesource.com/chromium/src.git' }}
+      run: >
+        .github/scripts/hosted-build.sh --install-deps --resume
+        --arch "${{ inputs.architecture }}"
+        --target chrome_modern_target
+
+    - name: Pack build tree
+      if: steps.build.outputs.status == 'running'
+      shell: bash
+      env:
+        UGC_WORK: /mnt/ugc
+      run: .github/scripts/hosted-export.sh
+
+    - name: Save build tree
+      if: steps.build.outputs.status == 'running'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: build-tree-${{ inputs.architecture }}
+        path: build-tree.tar.zst
+        retention-days: 1
+        overwrite: true
+        compression-level: 0
+
+    - name: Stage keystore from secrets
+      if: steps.build.outputs.status == 'completed'
+      shell: bash
+      env:
+        KEYSTORE_B64: ${{ inputs.keystore_b64 }}
+        KEYSTORE_PASS: ${{ inputs.keystore_pass }}
+      run: |
+        if [ -n "${KEYSTORE_B64:-}" ]; then
+          mkdir -p "$RUNNER_TEMP/ks"
+          chmod 700 "$RUNNER_TEMP/ks"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/ks/release.jks"
+          printf '%s' "$KEYSTORE_PASS" > "$RUNNER_TEMP/ks/pass"
+          chmod 600 "$RUNNER_TEMP/ks"/*
+          echo "UGC_KEYSTORE=$RUNNER_TEMP/ks/release.jks"   >> "$GITHUB_ENV"
+          echo "UGC_KEYSTORE_PASSFILE=$RUNNER_TEMP/ks/pass" >> "$GITHUB_ENV"
+        fi
+
+    - name: Sign and assemble
+      if: steps.build.outputs.status == 'completed'
+      shell: bash
+      run: |
+        cd /mnt/ugc
+        build/release.sh "${{ inputs.architecture }}"
+        . ./.build_config
+        echo "UGC_VERSION=${chromium_version}-${ungoogled_chromium_android_revision}" >> "$GITHUB_ENV"
+
+    - name: Remove staged keystore
+      if: always()
+      shell: bash
+      run: rm -rf "$RUNNER_TEMP/ks"
+
+    - name: Upload release
+      if: steps.build.outputs.status == 'completed'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: release-${{ inputs.architecture }}
+        path: /mnt/ugc/releases/${{ env.UGC_VERSION }}/
+        retention-days: 14
+        overwrite: true
+        compression-level: 0

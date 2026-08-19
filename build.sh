@@ -16,8 +16,8 @@ if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
     exit 1
 fi
 
-OPTIONS=dlira:t:
-LONGOPTS=debug,local-sdk,install-deps,resume,arch:,target:
+OPTIONS=dlipra:t:
+LONGOPTS=debug,local-sdk,install-deps,prepare-only,resume,arch:,target:
 
 ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
@@ -25,7 +25,7 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
 fi
 eval set -- "$PARSED"
 
-ARCH=- TARGET=- DEBUG=n LOCAL_SDK=n INSTALL_DEPS=n RESUME=n
+ARCH=- TARGET=- DEBUG=n LOCAL_SDK=n INSTALL_DEPS=n PREPARE_ONLY=n RESUME=n
 
 while true; do
     case "$1" in
@@ -39,6 +39,10 @@ while true; do
             ;;
         -i|--install-deps)
             INSTALL_DEPS=y
+            shift
+            ;;
+        -p|--prepare-only)
+            PREPARE_ONLY=y
             shift
             ;;
         -r|--resume)
@@ -310,6 +314,12 @@ if [ "$RESUME" != y ]; then
   } > "$stamp_file"
 fi
 
+if [ "$PREPARE_ONLY" = y ]; then
+    cat "$stamp_file"
+    echo "prepare complete, stopping before ninja"
+    exit 0
+fi
+
 ## Set compiler flags
 export AR=${AR:=llvm-ar}
 export NM=${NM:=llvm-nm}
@@ -320,12 +330,33 @@ export CCACHE_SLOPPINESS=time_macros
 
 ## Build
 NINJA_JOBS="${NINJA_JOBS:-5}"
+ninja_build() {
+  _dir="$1"
+  shift
+  if [ -z "${NINJA_TIMEOUT:-}" ]; then
+    "$ninja_bin" ${NINJA_JOBS:+-j ${NINJA_JOBS}} -C "$_dir" "$@"
+    return
+  fi
+  _rc=0
+  timeout -k 5m -s INT "$NINJA_TIMEOUT" \
+    "$ninja_bin" ${NINJA_JOBS:+-j ${NINJA_JOBS}} -C "$_dir" "$@" || _rc=$?
+  if [ "$_rc" = 124 ] || [ "$_rc" = 137 ]; then
+    echo "ninja reached the ${NINJA_TIMEOUT} budget with work remaining"
+    echo "status=running" >> "${GITHUB_OUTPUT:-/dev/null}"
+    exit 0
+  fi
+  return $_rc
+}
 apk_out_folder="apk_out"
 mkdir -p "${apk_out_folder}"
 pushd src
 ninja_bin="third_party/ninja/ninja"
 if [[ "$TARGET" != "all" ]]; then
-  "$ninja_bin" ${NINJA_JOBS:+-j ${NINJA_JOBS}} -C "${output_folder}" "${TARGET_EXPANDED}"
+  if [ "${TARGET_EXPANDED}" = "${chrome_modern_target}" ]; then
+    ninja_build "${output_folder}" "${TARGET_EXPANDED}" chrome_public_apk
+  else
+    ninja_build "${output_folder}" "${TARGET_EXPANDED}"
+  fi
   if [[ "$TARGET" == "trichrome_chrome_bundle_target" ]] || [[ "$TARGET" == "chrome_modern_target" ]] || [[ "$TARGET" == "trichrome_chrome_apk_target" ]] || [[ "$TARGET" == "trichrome_webview_target" ]]; then
     if [ -f "$uc_keystore" ]; then
       ../bundle_generate_apk.sh -o "${output_folder}" -a "${ARCH}" -t "${TARGET_EXPANDED}"
@@ -339,17 +370,17 @@ if [[ "$TARGET" != "all" ]]; then
     find ${output_folder}/apks -iname "*.apk" -exec cp -f {} ../"${apk_out_folder}" \;
   fi
 else
-  "$ninja_bin" ${NINJA_JOBS:+-j ${NINJA_JOBS}} -C out/Default "$chrome_modern_target"
+  ninja_build "out/Default" "$chrome_modern_target"
   if [ -f "$uc_keystore" ]; then
     ../bundle_generate_apk.sh -o "${output_folder}" -a "${ARCH}" -t "$chrome_modern_target"
   fi
-  "$ninja_bin" ${NINJA_JOBS:+-j ${NINJA_JOBS}} -C out/Default "$webview_target"
-  "$ninja_bin" ${NINJA_JOBS:+-j ${NINJA_JOBS}} -C out/Default "$trichrome_webview_target"
+  ninja_build "out/Default" "$webview_target"
+  ninja_build "out/Default" "$trichrome_webview_target"
   find ${output_folder}/apks/release -iname "*.apk" -exec cp -f {} ../"${apk_out_folder}" \;
 
   # arm64+TriChrome needs to be run separately, otherwise it will fail
   if [[ "$ARCH" != "arm64" ]]; then
-    "$ninja_bin" ${NINJA_JOBS:+-j ${NINJA_JOBS}} -C "${output_folder}" "$trichrome_chrome_apk_target"
+    ninja_build "${output_folder}" "$trichrome_chrome_apk_target"
     find ${output_folder}/apks/release -iname "*.apk" -exec cp -f {} ../"${apk_out_folder}" \;
   fi
 fi
@@ -357,5 +388,6 @@ popd
 
 printf 'session    %s  run %s  BUILD COMPLETE\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${GITHUB_RUN_NUMBER:-local}" >> "$stamp_file"
+echo "status=completed" >> "${GITHUB_OUTPUT:-/dev/null}"
 echo "=== build provenance ==="
 cat "$stamp_file"

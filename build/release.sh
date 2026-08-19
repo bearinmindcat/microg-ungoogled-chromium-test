@@ -39,6 +39,11 @@ KS_PASSFILE="${UGC_KEYSTORE_PASSFILE:-}"
 APKSIGNER="${APKSIGNER:-$(ls src/third_party/android_sdk/public/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)}"
 [ -x "${APKSIGNER:-}" ] || APKSIGNER=$(ls "$HOME"/android-sdk/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
 _TREE_JDK="src/third_party/jdk/current/bin"
+if [ -x "$_TREE_JDK/java" ]; then
+    JAVA_HOME="$(cd "$_TREE_JDK/.." && pwd)"
+    export JAVA_HOME
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
 KEYTOOL="${KEYTOOL:-$([ -x "$_TREE_JDK/keytool" ] && echo "$_TREE_JDK/keytool" || command -v keytool)}"
 JARSIGNER="${JARSIGNER:-$([ -x "$_TREE_JDK/jarsigner" ] && echo "$_TREE_JDK/jarsigner" || command -v jarsigner)}"
 echo "  apksigner: $APKSIGNER"
