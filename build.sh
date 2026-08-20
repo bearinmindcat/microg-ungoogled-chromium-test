@@ -321,6 +321,21 @@ grep -q '"signin_pref_names.cc"' src/components/signin/public/base/BUILD.gn \
   || { echo "FATAL: signin_pref_names.cc not in BUILD"; exit 1; }
 echo "microG: layer verified"
 
+if [ -d patches/Extensions ] && [ -f patches/Extensions/series ]; then
+  while read -r _ep; do
+    case "$_ep" in ''|'#'*) continue;; esac
+    _f="patches/Extensions/$_ep"
+    [ -f "$_f" ] || { echo "FATAL: missing extensions patch: $_ep"; exit 1; }
+    if   ( cd src && git apply --whitespace=nowarn "../$_f" ) 2>/dev/null; then echo "extensions: applied $_ep"
+    elif ( cd src && git apply --3way --whitespace=nowarn "../$_f" ) 2>/dev/null; then echo "extensions: applied 3way $_ep"
+    elif ( cd src && patch -p1 --forward --no-backup-if-mismatch -i "../$_f" >/tmp/ext.out 2>&1 ); then echo "extensions: applied patch $_ep"
+    else tail -5 /tmp/ext.out 2>/dev/null; echo "FATAL: extensions patch failed: $_ep"; exit 1; fi
+  done < patches/Extensions/series
+  grep -q "is_desktop_android_thorium" src/build/config/chrome_build.gni \
+    || { echo "FATAL: desktop-android buildflags missing"; exit 1; }
+  echo "extensions: layer verified"
+fi
+
 
   ## Configure output folder
   export PATH=$OLD_PATH  # remove depot_tools from PATH
