@@ -260,7 +260,7 @@ if [ "$RESUME" != y ]; then
 
   # Ignore the pruning error
   python3 ungoogled-chromium/utils/prune_binaries.py src ungoogled-chromium/pruning.list --keep-contingent-paths || true
-for _p in disable-gaia.patch disable-gcm.patch disable-webstore-urls.patch; do
+for _p in disable-gaia.patch disable-gcm.patch disable-webstore-urls.patch 0005-disable-default-extensions.patch; do
   if grep -qE "^[^#].*${_p}$" ungoogled-chromium/patches/series; then
     sed -i "s|^\(.*${_p}\)$|#\1|" ungoogled-chromium/patches/series
     echo "microG: disabled core/${_p}"
@@ -268,7 +268,7 @@ for _p in disable-gaia.patch disable-gcm.patch disable-webstore-urls.patch; do
 done
 python3 ungoogled-chromium/utils/patches.py apply src ungoogled-chromium/patches
 
-_mg_desub='^(google_apis/gaia/|google_apis/google_api_keys\.|components/signin/|components/sync/|extensions/common/extension_urls\.)'
+_mg_desub='^(google_apis/gaia/|google_apis/google_api_keys\.|components/signin/|components/sync/|extensions/common/extension_urls\.|chrome/app/extensions_strings\.grdp|extensions/strings/extensions_strings\.grd)'
 for _sl in ungoogled-chromium/domain_substitution.list "${substitution_list_2:-domain_sub_2.list}"; do
   [ -f "$_sl" ] || continue
   _n0=$(wc -l < "$_sl")

@@ -677,12 +677,12 @@ diff --git a/chrome/app/extensions_strings.grdp b/chrome/app/extensions_strings.
    </message>
 +<if expr="is_android">
 +  <message name="IDS_EXTENSIONS_NO_INSTALLED_ITEMS" desc="The message shown to the user on the Extensions settings page when there are no extensions or apps installed.">
-+    Find extensions and themes in the <ph name="BEGIN_LINK">&lt;a target="_blank" href="https://chromewebstore.9oo91e.qjz9zk"&gt;</ph>Chrome Web Store<ph name="END_LINK">&lt;/a&gt;<ex>&lt;/a&gt;</ex></ph>
++    Find extensions and themes in the <ph name="BEGIN_LINK">&lt;a target="_blank" href="https://chromewebstore.google.com"&gt;</ph>Chrome Web Store<ph name="END_LINK">&lt;/a&gt;<ex>&lt;/a&gt;</ex></ph>
 +  </message>
 +</if>
 +<if expr="not is_android">
    <message name="IDS_EXTENSIONS_NO_INSTALLED_ITEMS" desc="The message shown to the user on the Extensions settings page when there are no extensions or apps installed.">
-     Find extensions and themes in the <ph name="BEGIN_LINK">&lt;a target="_blank" href="https://chrome.9oo91e.qjz9zk/webstore/category/extensions"&gt;</ph>Chrome Web Store<ph name="END_LINK">&lt;/a&gt;<ex>&lt;/a&gt;</ex></ph>
+     Find extensions and themes in the <ph name="BEGIN_LINK">&lt;a target="_blank" href="https://chrome.google.com/webstore/category/extensions"&gt;</ph>Chrome Web Store<ph name="END_LINK">&lt;/a&gt;<ex>&lt;/a&gt;</ex></ph>
    </message>
 +</if>
    <message name="IDS_EXTENSIONS_NO_DESCRIPTION" desc="The message shown to the user when an extension does not have any description.">
