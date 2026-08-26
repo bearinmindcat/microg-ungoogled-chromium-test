@@ -329,7 +329,7 @@ grep -q '"signin_pref_names.cc"' src/components/signin/public/base/BUILD.gn \
   || { echo "FATAL: signin_pref_names.cc not in BUILD"; exit 1; }
 echo "microG: layer verified"
 
-for _layer in Extensions misc-own; do
+for _layer in Extensions Extensions/Ultimatum misc-own; do
   [ -d "patches/$_layer" ] && [ -f "patches/$_layer/series" ] || continue
   while read -r _ep; do
     case "$_ep" in ''|'#'*) continue;; esac
