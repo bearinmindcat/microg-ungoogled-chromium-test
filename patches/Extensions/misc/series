@@ -1,0 +1,5 @@
+incognito-extension-background-pages.patch
+extension-context-menu-commands.patch
+extensions-menu-null-guard.patch
+extension-popup-key-event-guard.patch
+webstore-desktop-site.patch

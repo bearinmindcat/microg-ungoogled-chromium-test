@@ -268,7 +268,7 @@ for _p in disable-gaia.patch disable-gcm.patch disable-webstore-urls.patch 0005-
 done
 python3 ungoogled-chromium/utils/patches.py apply src ungoogled-chromium/patches
 
-_mg_desub='^(google_apis/gaia/|google_apis/google_api_keys\.|components/signin/|components/sync/|extensions/common/extension_urls\.|chrome/app/extensions_strings\.grdp|extensions/strings/extensions_strings\.grd)'
+_mg_desub='^(\./)?(google_apis/gaia/|google_apis/google_api_keys\.|components/signin/|components/sync/|extensions/common/extension_urls\.|chrome/app/extensions_strings\.grdp|extensions/strings/extensions_strings\.grd|extensions/browser/updater/|chrome/browser/extensions/updater/|components/embedder_support/android/java/src/org/chromium/components/embedder_support/util/UrlConstants\.java)'
 for _sl in ungoogled-chromium/domain_substitution.list "${substitution_list_2:-domain_sub_2.list}"; do
   [ -f "$_sl" ] || continue
   _n0=$(wc -l < "$_sl")
@@ -329,7 +329,7 @@ grep -q '"signin_pref_names.cc"' src/components/signin/public/base/BUILD.gn \
   || { echo "FATAL: signin_pref_names.cc not in BUILD"; exit 1; }
 echo "microG: layer verified"
 
-for _layer in Extensions Extensions/Ultimatum misc-own; do
+for _layer in Extensions Extensions/Ultimatum Extensions/misc Extensions/helium Own; do
   [ -d "patches/$_layer" ] && [ -f "patches/$_layer/series" ] || continue
   while read -r _ep; do
     case "$_ep" in ''|'#'*) continue;; esac
@@ -355,6 +355,11 @@ grep -q "StartUpdateCheck(std::move(fetch))" src/extensions/browser/updater/exte
   || { echo "FATAL: extension downloader still disabled (disable-webstore-urls active?)"; exit 1; }
 grep -q "clients2.google.com/service/update2/crx" src/extensions/common/extension_urls.cc \
   || { echo "FATAL: webstore update URL still domain-substituted"; exit 1; }
+grep -q "http://www.google.com/update2/response" src/extensions/browser/updater/safe_manifest_parser.cc \
+  || { echo "FATAL: update-manifest xmlns still domain-substituted (updates + store installs cannot parse responses)"; exit 1; }
+grep -q 'CHROME_WEBSTORE_URL = "https://chromewebstore.google.com/"' \
+  src/components/embedder_support/android/java/src/org/chromium/components/embedder_support/util/UrlConstants.java \
+  || { echo "FATAL: Java-side webstore URL still domain-substituted (domain_sub_2.list not filtered?)"; exit 1; }
 echo "extensions: layer verified"
 
 
