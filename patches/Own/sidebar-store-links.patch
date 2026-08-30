@@ -1,7 +1,7 @@
 diff --git a/chrome/browser/resources/extensions/sidebar.html.ts b/chrome/browser/resources/extensions/sidebar.html.ts
 --- a/chrome/browser/resources/extensions/sidebar.html.ts
 +++ b/chrome/browser/resources/extensions/sidebar.html.ts
-@@ -33,6 +33,20 @@ export function getHtml(this: ExtensionsSidebarElement) {
+@@ -33,6 +33,27 @@ export function getHtml(this: ExtensionsSidebarElement) {
      <cr-ripple></cr-ripple>
    </a>
  </cr-menu-selector>
@@ -17,6 +17,13 @@ diff --git a/chrome/browser/resources/extensions/sidebar.html.ts b/chrome/browse
 +  <cr-icon id="web-store-icon" icon="extensions-icons:web_store">
 +  </cr-icon>
 +  <a href="https://addons.opera.com/">Opera add-ons</a>
++  <cr-ripple></cr-ripple>
++</div>
++<div class="separator"></div>
++<div class="cr-nav-menu-item" id="moreExtensions">
++  <cr-icon id="web-store-icon" icon="extensions-icons:web_store">
++  </cr-icon>
++  <a href="https://github.com/NeverDecaf/chromium-web-store/releases">NeverDecaf Web Store</a>
 +  <cr-ripple></cr-ripple>
 +</div>
  <!--_html_template_end_-->`;
