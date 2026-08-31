@@ -14,7 +14,7 @@ diff --git a/chrome/browser/resources/extensions/sidebar.html.ts b/chrome/browse
 +</div>
 +<div class="separator"></div>
 +<div class="cr-nav-menu-item" id="moreExtensions">
-+  <cr-icon id="web-store-icon" icon="extensions-icons:web_store">
++  <cr-icon id="web-store-icon" icon="extensions-icons:opera">
 +  </cr-icon>
 +  <a href="https://addons.opera.com/">Opera add-ons</a>
 +  <cr-ripple></cr-ripple>
