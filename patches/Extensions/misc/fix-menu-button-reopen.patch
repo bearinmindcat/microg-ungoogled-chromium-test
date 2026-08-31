@@ -1,0 +1,40 @@
+diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/extensions/ExtensionsMenuCoordinator.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/extensions/ExtensionsMenuCoordinator.java
+--- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/extensions/ExtensionsMenuCoordinator.java
++++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/extensions/ExtensionsMenuCoordinator.java
+@@ -10,6 +10,7 @@ import android.content.res.ColorStateList;
+ import android.graphics.Rect;
+ import android.os.Handler;
+ import android.os.Looper;
++import android.os.SystemClock;
+ import android.view.LayoutInflater;
+ import android.view.View;
+ 
+@@ -98,6 +99,10 @@ public class ExtensionsMenuCoordinator
+     private final ModalDialogManager mModalDialogManager;
+ 
+     @Nullable @VisibleForTesting ExtensionsMenuMediator mMediator;
++
++    // Timestamp of the most recent menu dismissal, used to swallow the click that
++    // dismissed the menu so tapping the toolbar button does not immediately reopen it.
++    private long mMenuDismissElapsedRealtimeMs;
+     private Callback<String> mOpenUrlInCustomTab;
+ 
+     /**
+@@ -184,6 +189,9 @@ public class ExtensionsMenuCoordinator
+         // Menu mediator is created when menu is triggered.
+         mExtensionsMenuButton.setOnClickListener(
+                 (view) -> {
++                    if (SystemClock.elapsedRealtime() - mMenuDismissElapsedRealtimeMs < 100) {
++                        return;
++                    }
+                     TrackerFactory.getTrackerForProfile(mProfile)
+                             .notifyEvent(EventConstants.EXTENSIONS_MENU_BUTTON_CLICKED);
+                     createMediator();
+@@ -196,6 +204,7 @@ public class ExtensionsMenuCoordinator
+ 
+                     @Override
+                     public void onPopupMenuDismissed() {
++                        mMenuDismissElapsedRealtimeMs = SystemClock.elapsedRealtime();
+                         mMenuButtonPinningDelegate.requestLayoutWithViewUtils();
+                         destroyMediator();
+                         mExtensionModels.clear();
