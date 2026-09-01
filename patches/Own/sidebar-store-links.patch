@@ -1,7 +1,7 @@
 diff --git a/chrome/browser/resources/extensions/sidebar.html.ts b/chrome/browser/resources/extensions/sidebar.html.ts
 --- a/chrome/browser/resources/extensions/sidebar.html.ts
 +++ b/chrome/browser/resources/extensions/sidebar.html.ts
-@@ -33,6 +33,27 @@ export function getHtml(this: ExtensionsSidebarElement) {
+@@ -33,6 +33,34 @@ export function getHtml(this: ExtensionsSidebarElement) {
      <cr-ripple></cr-ripple>
    </a>
  </cr-menu-selector>
@@ -17,6 +17,13 @@ diff --git a/chrome/browser/resources/extensions/sidebar.html.ts b/chrome/browse
 +  <cr-icon id="web-store-icon" icon="extensions-icons:opera">
 +  </cr-icon>
 +  <a href="https://addons.opera.com/">Opera add-ons</a>
++  <cr-ripple></cr-ripple>
++</div>
++<div class="separator"></div>
++<div class="cr-nav-menu-item" id="moreExtensions">
++  <cr-icon id="web-store-icon" icon="extensions-icons:edge">
++  </cr-icon>
++  <a href="https://microsoftedge.microsoft.com/addons">Edge Add-ons</a>
 +  <cr-ripple></cr-ripple>
 +</div>
 +<div class="separator"></div>

@@ -1,0 +1,9 @@
+diff --git a/chrome/browser/resources/extensions/icons.html b/chrome/browser/resources/extensions/icons.html
+--- a/chrome/browser/resources/extensions/icons.html
++++ b/chrome/browser/resources/extensions/icons.html
+@@ -33,4 +33,5 @@
+ </defs>
+ </svg>
+   <g id="opera"><path fill="#FF1B2D" fill-rule="evenodd" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 3.6a3.4 6.4 0 100 12.8 3.4 6.4 0 000-12.8z"></path></g>
++  <g id="edge"><path fill="#1273CE" fill-rule="evenodd" d="M12 2a10 10 0 100 20 10 10 0 000-20zm2.5 3a7.5 7.5 0 100 14 7.5 7.5 0 000-14z"></path></g>
+ </cr-iconset>
