@@ -1,3 +1,6 @@
+# 152.0.7977.82-4
+* microG: fixed a crash when removing an extension. The ported incognito-extensions patch shares one extensions-menu bridge across the app, and a closed menu never unsubscribed from it; the uninstall dialog closes the menu and clears its list, so confirming the removal made the stale menu delete a row from an empty list. The menu now unsubscribes when it closes, and out-of-range add/remove/icon updates resync from native instead of crashing
+
 # 152.0.7977.82-3
 * microG: downloads can be handed to another app. Settings > Downloads gains "Download with another app" (off by default); each download is offered to an installed download manager over ACTION_VIEW and only dropped here if one takes it. http/https only, and sign-in cookies are not passed on
 * microG: a pure black theme for OLED panels. Settings > Appearance > Theme gains "Pure black" (on by default, dark mode only), painting browser surfaces true black instead of Material dark grey
