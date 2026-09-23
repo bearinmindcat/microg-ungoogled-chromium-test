@@ -1,5 +1,7 @@
 # 152.0.7977.82-4
 * microG: fixed a crash when removing an extension. The ported incognito-extensions patch shares one extensions-menu bridge across the app, and a closed menu never unsubscribed from it; the uninstall dialog closes the menu and clears its list, so confirming the removal made the stale menu delete a row from an empty list. The menu now unsubscribes when it closes, and out-of-range add/remove/icon updates resync from native instead of crashing
+* microG: Developer tools and Task manager on phones. Upstream's on-device DevTools is switched on (turn it off with chrome://flags > Developer tools), and a More tools submenu in the app menu holds Developer tools and Task manager; tapping More tools again closes it. Long-press > Inspect works on any element, since the long-press menu also opens on blank page space while DevTools is available. DevTools only loads its built-in frontend
+* microG: a "New tab" checkbox in More tools opens Developer tools and Inspect as a normal tab next to the page instead of a separate window, like Kiwi Browser. Toggling it keeps the menu open
 
 # 152.0.7977.82-3
 * microG: downloads can be handed to another app. Settings > Downloads gains "Download with another app" (off by default); each download is offered to an installed download manager over ACTION_VIEW and only dropped here if one takes it. http/https only, and sign-in cookies are not passed on
