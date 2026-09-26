@@ -1,3 +1,6 @@
+# 152.0.7977.82-5
+* microG: extensions can answer login challenges again. VPN and proxy extensions (Proton VPN, Windscribe, Hotspot Shield) now connect without a sign-in prompt, and extensions that fill website HTTP logins, such as Bitwarden's, get their chance to. The login flow's hand-off to webRequest.onAuthRequired was only built with full desktop extensions, which Android doesn't use, so every challenge went straight to the native sign-in dialog
+
 # 152.0.7977.82-4
 * microG: fixed a crash when removing an extension. The ported incognito-extensions patch shares one extensions-menu bridge across the app, and a closed menu never unsubscribed from it; the uninstall dialog closes the menu and clears its list, so confirming the removal made the stale menu delete a row from an empty list. The menu now unsubscribes when it closes, and out-of-range add/remove/icon updates resync from native instead of crashing
 * microG: Developer tools and Task manager on phones. Upstream's on-device DevTools is switched on (turn it off with chrome://flags > Developer tools), and a More tools submenu in the app menu holds Developer tools and Task manager; tapping More tools again closes it. Long-press > Inspect works on any element, since the long-press menu also opens on blank page space while DevTools is available. DevTools only loads its built-in frontend
