@@ -1,18 +1,21 @@
+# 152.0.7977.82-6
+* microG: extensions can replace the New Tab page (e.g. TablissNG), now on by default. After updating, force-stop and reopen the browser once
+
 # 152.0.7977.82-5
-* microG: extensions can answer login challenges again. VPN and proxy extensions (Proton VPN, Windscribe, Hotspot Shield) now connect without a sign-in prompt, and extensions that fill website HTTP logins, such as Bitwarden's, get their chance to. The login flow's hand-off to webRequest.onAuthRequired was only built with full desktop extensions, which Android doesn't use, so every challenge went straight to the native sign-in dialog
+* microG: extensions can answer proxy and HTTP logins again, so VPN extensions (e.g. Proton VPN) connect without a sign-in prompt
 
 # 152.0.7977.82-4
-* microG: fixed a crash when removing an extension. The ported incognito-extensions patch shares one extensions-menu bridge across the app, and a closed menu never unsubscribed from it; the uninstall dialog closes the menu and clears its list, so confirming the removal made the stale menu delete a row from an empty list. The menu now unsubscribes when it closes, and out-of-range add/remove/icon updates resync from native instead of crashing
-* microG: Developer tools and Task manager on phones. Upstream's on-device DevTools is switched on (turn it off with chrome://flags > Developer tools), and a More tools submenu in the app menu holds Developer tools and Task manager; tapping More tools again closes it. Long-press > Inspect works on any element, since the long-press menu also opens on blank page space while DevTools is available. DevTools only loads its built-in frontend
-* microG: a "New tab" checkbox in More tools opens Developer tools and Inspect as a normal tab next to the page instead of a separate window, like Kiwi Browser. Toggling it keeps the menu open
+* microG: fixed a crash when removing an extension
+* microG: Developer tools and Task manager in a new More tools menu; long-press > Inspect works on any element
+* microG: a Kiwi-style "New tab" checkbox in More tools opens DevTools as a tab
 
 # 152.0.7977.82-3
-* microG: downloads can be handed to another app. Settings > Downloads gains "Download with another app" (off by default); each download is offered to an installed download manager over ACTION_VIEW and only dropped here if one takes it. http/https only, and sign-in cookies are not passed on
-* microG: a pure black theme for OLED panels. Settings > Appearance > Theme gains "Pure black" (on by default, dark mode only), painting browser surfaces true black instead of Material dark grey
-* microG: fixed a crash at launch ("Primary account should exist in the list of accounts when seeding"). The account delegate now persists each account's Gaia ID so it stays stable across launches, and the sign-in fallback keeps the stored primary account instead of re-keying it
+* microG: optional "Download with another app" in Settings > Downloads hands downloads to a download manager
+* microG: pure black theme for OLED screens, on by default in dark mode (Settings > Appearance > Theme)
+* microG: fixed the launch crash "Primary account should exist in the list of accounts when seeding"
 
 # 152.0.7977.82-2
-* microG: developer mode and extension installs are no longer locked by a supervised-account flag. microG cannot answer the parental-controls account capability, so it is reported unknown instead of trusting hasFeatures; a stale child flag is cleared when no account is signed in; the ExtensionDeveloperModeSettings policy handler is not registered
+* microG: developer mode and extension installs are no longer locked by a false supervised-account flag
 
 # 152.0.7977.82-1
 * Upstream update (v150.0.7871.114-1 to v152.0.7977.82)
