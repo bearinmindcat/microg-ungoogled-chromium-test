@@ -1,3 +1,7 @@
+# 154.0.8037.92-1
+* Upstream update (v152.0.7977.82-6 to v154.0.8037.92)
+* Refreshed the patch series for 154; added src-fix patches for extra locales and download obfuscation
+
 # 152.0.7977.82-6
 * microG: extensions can replace the New Tab page (e.g. TablissNG), now on by default. After updating, force-stop and reopen the browser once
 
