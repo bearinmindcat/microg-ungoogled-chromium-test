@@ -1,6 +1,9 @@
 # 154.0.8037.92-1
 * Upstream update (v152.0.7977.82-6 to v154.0.8037.92)
 * Refreshed the patch series for 154; added src-fix patches for extra locales and download obfuscation
+* microG: extension core, incognito and quick-toggle patches updated to gz83/Thorium's 154 versions
+* microG: dropped the extension proxy-login, popup key-event and menu-button fixes (now fixed in Chromium 154)
+* microG: ported the remaining microG, extension and Own patches to 154
 
 # 152.0.7977.82-6
 * microG: extensions can replace the New Tab page (e.g. TablissNG), now on by default. After updating, force-stop and reopen the browser once
