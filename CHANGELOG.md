@@ -1,3 +1,6 @@
+# 154.0.8037.92-2
+* Restored the sync service that ungoogled-chromium 154 removed; fixes microG sync and a crash when opening Bookmarks
+
 # 154.0.8037.92-1
 * Upstream update (v152.0.7977.82-6 to v154.0.8037.92)
 * Refreshed the patch series for 154; added src-fix patches for extra locales and download obfuscation
