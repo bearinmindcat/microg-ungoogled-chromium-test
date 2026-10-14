@@ -1,6 +1,9 @@
 # 155.0.8059.39-1
 * Upstream update (v154.0.8037.92-2 to v155.0.8059.39)
 * Refreshed the patch series for 155; the sync service fix now matches upstream's
+* microG: extension core, incognito and quick-toggle patches updated to gz83/Thorium's 155 versions
+* microG: Gemini (Ask Gemini) disabled by default
+* microG: ported the remaining microG, extension and Own patches to 155
 
 # 154.0.8037.92-2
 * Restored the sync service that ungoogled-chromium 154 removed; fixes microG sync and a crash when opening Bookmarks
